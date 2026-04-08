@@ -24,7 +24,7 @@ import { contactInfo, socialLinks } from '../data/site';
     </div>
 
     <!-- Contact cards row -->
-    <div class="contact-cards reveal-stagger reveal-up">
+    <div class="contact-cards">
       <a href={`mailto:${contactInfo.email}`} class="contact-card" data-contact-card>
         <div class="contact-card__glow"></div>
         <div class="contact-card__icon">
@@ -59,7 +59,7 @@ import { contactInfo, socialLinks } from '../data/site';
     <!-- Main content: form + social sidebar -->
     <div class="contact-hub__body">
       <!-- Form -->
-      <div class="contact-hub__form-wrapper reveal-left" data-contact-form>
+      <div class="contact-hub__form-wrapper" data-contact-form>
         <div class="contact-hub__form-header">
           <h3 class="contact-hub__form-title">Envie sua mensagem</h3>
           <p class="contact-hub__form-subtitle">Respondo em até 24 horas</p>
@@ -95,7 +95,7 @@ import { contactInfo, socialLinks } from '../data/site';
       </div>
 
       <!-- Social sidebar -->
-      <div class="contact-hub__social reveal-right" data-contact-social>
+      <div class="contact-hub__social" data-contact-social>
         <p class="contact-hub__social-label">Redes Sociais</p>
         <div class="contact-hub__social-links">
           {socialLinks.map((link) => (
@@ -122,6 +122,9 @@ import { contactInfo, socialLinks } from '../data/site';
 
 <script>
   import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
 
   const initContactHub = () => {
     const hub = document.querySelector<HTMLElement>('.contact-hub');
@@ -129,7 +132,53 @@ import { contactInfo, socialLinks } from '../data/site';
 
     hub.dataset.enhanced = 'true';
 
-    /* Orb parallax — only visual effect, no reveal conflicts */
+    /* ── Reveal animations (self-contained, no conflict with global system) ── */
+    const cards = hub.querySelectorAll<HTMLElement>('[data-contact-card]');
+    if (cards.length) {
+      gsap.set(cards, { y: 30, opacity: 0 });
+      ScrollTrigger.create({
+        trigger: cards[0],
+        start: 'top 88%',
+        once: true,
+        onEnter: () => {
+          gsap.to(cards, {
+            y: 0,
+            opacity: 1,
+            duration: 0.7,
+            stagger: 0.1,
+            ease: 'power3.out',
+          });
+        },
+      });
+    }
+
+    const form = hub.querySelector<HTMLElement>('[data-contact-form]');
+    if (form) {
+      gsap.set(form, { x: -30, opacity: 0 });
+      ScrollTrigger.create({
+        trigger: form,
+        start: 'top 88%',
+        once: true,
+        onEnter: () => {
+          gsap.to(form, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
+        },
+      });
+    }
+
+    const social = hub.querySelector<HTMLElement>('[data-contact-social]');
+    if (social) {
+      gsap.set(social, { x: 30, opacity: 0 });
+      ScrollTrigger.create({
+        trigger: social,
+        start: 'top 88%',
+        once: true,
+        onEnter: () => {
+          gsap.to(social, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
+        },
+      });
+    }
+
+    /* ── Orb parallax ── */
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const orbs = Array.from(hub.querySelectorAll<HTMLElement>('.contact-hub__orb'));

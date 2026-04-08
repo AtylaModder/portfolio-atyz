@@ -65,6 +65,10 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       let geoInitialized = false;
 
       document.addEventListener('astro:page-load', () => {
+        /* ── Always start at the top on load/reload ── */
+        history.scrollRestoration = 'manual';
+        window.scrollTo(0, 0);
+
         /* ── Geo background (persisted — init once) ── */
         if (!geoInitialized) {
           initGeoBackground();
