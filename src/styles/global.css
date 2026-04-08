@@ -150,6 +150,68 @@ body::after {
   90% { background-position: -10% 10%; }
 }
 
+/* ── Custom Cursor ────────────────────────────── */
+:root {
+  --cursor-r: 231;
+  --cursor-g: 195;
+  --cursor-b: 79;
+}
+
+/* Hide native cursor globally when custom cursor is active */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: rgb(var(--cursor-r), var(--cursor-g), var(--cursor-b));
+  z-index: 100000;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--cursor-r), var(--cursor-g), var(--cursor-b), 0.5);
+  z-index: 99999;
+  pointer-events: none;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              height 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              margin 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease,
+              opacity 0.2s ease;
+}
+
+/* Hover interactive — expand ring */
+.cursor-ring.is-hover {
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-color: rgba(var(--cursor-r), var(--cursor-g), var(--cursor-b), 0.35);
+}
+
+/* 3D viewer — crosshair */
+.cursor-ring.is-crosshair {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-color: rgba(var(--cursor-r), var(--cursor-g), var(--cursor-b), 0.4);
+  border-radius: 4px;
+}
+
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 button, input, textarea { font: inherit; }

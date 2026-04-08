@@ -58,6 +58,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initGeoBackground } from '../lib/geo-background';
       import { initRevealAnimations } from '../scripts/animations';
       import { initMicrointeractions } from '../scripts/microinteractions';
+      import { initCustomCursor } from '../scripts/custom-cursor';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -183,6 +184,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
                 setupScrollAnimations();
                 initRevealAnimations();
                 initMicrointeractions();
+                initCustomCursor();
               },
             });
           });
@@ -193,6 +195,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
           setupScrollAnimations();
           initRevealAnimations();
           initMicrointeractions();
+          initCustomCursor();
         }
       });
 
