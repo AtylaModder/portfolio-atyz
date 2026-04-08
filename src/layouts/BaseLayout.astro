@@ -77,6 +77,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initCustomCursor } from '../scripts/custom-cursor';
       import { initHeroParticles } from '../scripts/hero-particles';
       import { getPerfTier, getParallaxScale, monitorFrameRate } from '../scripts/perf-tier';
+      import { initCountUpStats } from '../scripts/countup-stats';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -268,27 +269,8 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
           });
         }
 
-        /* Stats counter animation */
-        document.querySelectorAll('[data-counter]').forEach((el) => {
-          const target = parseInt((el as HTMLElement).dataset.counter || '0', 10);
-          const obj = { val: 0 };
-
-          ScrollTrigger.create({
-            trigger: el,
-            start: 'top 85%',
-            once: true,
-            onEnter: () => {
-              gsap.to(obj, {
-                val: target,
-                duration: 2,
-                ease: 'power2.out',
-                onUpdate: () => {
-                  (el as HTMLElement).textContent = Math.round(obj.val).toString();
-                },
-              });
-            },
-          });
-        });
+        /* Stats counter animation — CountUp.js with IntersectionObserver */
+        initCountUpStats();
       }
     </script>
   </body>
