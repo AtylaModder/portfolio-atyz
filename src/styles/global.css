@@ -571,6 +571,20 @@ button, input, textarea { font: inherit; }
   font-size: var(--text-h3);
   line-height: var(--lh-normal);
   color: var(--color-muted);
+  min-height: 2.4em; /* prevent layout shift during typing */
+}
+
+/* Typed.js cursor */
+.hero__subtitle .typed-cursor {
+  color: var(--color-primary);
+  font-weight: 300;
+  opacity: 1;
+  animation: typed-blink 0.7s infinite;
+}
+
+@keyframes typed-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .hero__cta {

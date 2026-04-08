@@ -78,6 +78,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initHeroParticles } from '../scripts/hero-particles';
       import { getPerfTier, getParallaxScale, monitorFrameRate } from '../scripts/perf-tier';
       import { initCountUpStats } from '../scripts/countup-stats';
+      import { initHeroTyped } from '../scripts/hero-typed';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -232,7 +233,8 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
           .from('.hero__title', { y: 60, opacity: 0, duration: 1 }, '-=0.5')
           .from('.hero__subtitle', { y: 40, opacity: 0, duration: 0.8 }, '-=0.6')
           .from('.hero__cta', { y: 30, opacity: 0, duration: 0.7 }, '-=0.4')
-          .from('.hero__scroll', { opacity: 0, duration: 0.6 }, '-=0.2');
+          .from('.hero__scroll', { opacity: 0, duration: 0.6 }, '-=0.2')
+          .call(() => initHeroTyped(), [], '-=0.3');
       }
 
       /* ── All Scroll-Driven Animations ──────────── */
