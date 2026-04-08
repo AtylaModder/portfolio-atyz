@@ -122,61 +122,44 @@ import { contactInfo, socialLinks } from '../data/site';
 
 <script>
   import gsap from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-  gsap.registerPlugin(ScrollTrigger);
-
-  const initContactHub = () => {
+  function initContactHub() {
     const hub = document.querySelector<HTMLElement>('.contact-hub');
-    if (!hub || hub.dataset.enhanced === 'true') return;
+    if (!hub) return;
 
+    /* Reset enhanced flag on each page-load so it re-inits after navigation */
     hub.dataset.enhanced = 'true';
 
-    /* ── Reveal animations (self-contained, no conflict with global system) ── */
+    /* ── Reveal via IntersectionObserver (immune to ScrollTrigger.kill) ── */
     const cards = hub.querySelectorAll<HTMLElement>('[data-contact-card]');
-    if (cards.length) {
-      gsap.set(cards, { y: 30, opacity: 0 });
-      ScrollTrigger.create({
-        trigger: cards[0],
-        start: 'top 88%',
-        once: true,
-        onEnter: () => {
-          gsap.to(cards, {
-            y: 0,
-            opacity: 1,
-            duration: 0.7,
-            stagger: 0.1,
-            ease: 'power3.out',
-          });
-        },
-      });
-    }
-
     const form = hub.querySelector<HTMLElement>('[data-contact-form]');
-    if (form) {
-      gsap.set(form, { x: -30, opacity: 0 });
-      ScrollTrigger.create({
-        trigger: form,
-        start: 'top 88%',
-        once: true,
-        onEnter: () => {
-          gsap.to(form, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
-        },
-      });
-    }
-
     const social = hub.querySelector<HTMLElement>('[data-contact-social]');
-    if (social) {
-      gsap.set(social, { x: 30, opacity: 0 });
-      ScrollTrigger.create({
-        trigger: social,
-        start: 'top 88%',
-        once: true,
-        onEnter: () => {
-          gsap.to(social, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
-        },
+
+    /* Set initial hidden state */
+    cards.forEach((c) => { c.style.opacity = '0'; c.style.transform = 'translateY(30px)'; });
+    if (form) { form.style.opacity = '0'; form.style.transform = 'translateX(-30px)'; }
+    if (social) { social.style.opacity = '0'; social.style.transform = 'translateX(30px)'; }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target as HTMLElement;
+        observer.unobserve(el);
+
+        if (el.hasAttribute('data-contact-card')) {
+          const idx = Array.from(cards).indexOf(el);
+          gsap.to(el, { y: 0, opacity: 1, duration: 0.7, delay: idx * 0.1, ease: 'power3.out' });
+        } else if (el === form) {
+          gsap.to(el, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
+        } else if (el === social) {
+          gsap.to(el, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out' });
+        }
       });
-    }
+    }, { threshold: 0.1 });
+
+    cards.forEach((c) => observer.observe(c));
+    if (form) observer.observe(form);
+    if (social) observer.observe(social);
 
     /* ── Orb parallax ── */
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -212,9 +195,5 @@ import { contactInfo, socialLinks } from '../data/site';
     hub.addEventListener('pointerleave', resetParallax);
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initContactHub, { once: true });
-  } else {
-    initContactHub();
-  }
+  document.addEventListener('astro:page-load', initContactHub);
 </script>
