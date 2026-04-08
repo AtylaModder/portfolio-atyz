@@ -77,13 +77,41 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
         /* ── Loading Screen ────────────────────────── */
         const loader = document.getElementById('loader');
         const pageWrap = document.querySelector('.page-wrap') as HTMLElement;
+        const loaderBar = document.getElementById('loader-bar');
 
         if (loader) {
+          /* Simulate progress bar */
+          if (loaderBar) {
+            gsap.to(loaderBar, { width: '70%', duration: 1.0, ease: 'power2.out' });
+            gsap.to(loaderBar, { width: '100%', duration: 0.6, delay: 1.0, ease: 'power2.inOut' });
+          }
+
+          const loaderLogo = document.getElementById('loader-logo');
+          const headerLogo = document.querySelector('.header__logo') as HTMLElement;
+
           gsap.to(loader, {
             opacity: 0,
-            duration: 0.6,
-            delay: 2.2,
+            duration: 0.5,
+            delay: 1.9,
             ease: 'power2.inOut',
+            onStart: () => {
+              /* Fly the loader logo toward the header logo position */
+              if (loaderLogo && headerLogo) {
+                const from = loaderLogo.getBoundingClientRect();
+                const to = headerLogo.getBoundingClientRect();
+                const dx = to.left - from.left;
+                const dy = to.top - from.top;
+                const scaleEnd = to.height / from.height;
+
+                gsap.to(loaderLogo, {
+                  x: dx,
+                  y: dy,
+                  scale: scaleEnd,
+                  duration: 0.5,
+                  ease: 'power3.inOut',
+                });
+              }
+            },
             onComplete: () => {
               loader.style.display = 'none';
               document.body.classList.remove('is-loading');

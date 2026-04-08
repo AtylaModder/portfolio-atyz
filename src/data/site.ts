@@ -5,7 +5,7 @@ export const siteMeta = {
   shortTitle: 'Atyz Modder',
   description:
     'Portfólio de Atyz — design gráfico, modelagem 3D, texturas e direção visual para Minecraft Bedrock. Add-ons, showcases e experiências digitais únicas.',
-  url: 'https://seu-dominio-aqui.com',
+  url: 'https://atyzmodder.com',
   ogImage: '/social-card.svg',
   keywords: [
     'Atyz',
@@ -24,7 +24,7 @@ export const navigation = [
   { href: '#about', label: 'Sobre' },
   { href: '#projects', label: 'Projetos' },
   { href: '#models', label: 'Modelos' },
-  { href: '#contact', label: 'Contato' },
+  { href: '#visuals', label: 'Vibrant Visuals' },
 ] as const;
 
 export const heroData = {

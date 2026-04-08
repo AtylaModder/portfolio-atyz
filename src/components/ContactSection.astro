@@ -122,9 +122,6 @@ import { contactInfo, socialLinks } from '../data/site';
 
 <script>
   import gsap from 'gsap';
-  import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-  gsap.registerPlugin(ScrollTrigger);
 
   const initContactHub = () => {
     const hub = document.querySelector<HTMLElement>('.contact-hub');
@@ -132,51 +129,7 @@ import { contactInfo, socialLinks } from '../data/site';
 
     hub.dataset.enhanced = 'true';
 
-    const header = hub.querySelector('.contact-hub__header');
-    if (header) {
-      gsap.from(header.children, {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: header, start: 'top 85%' },
-      });
-    }
-
-    const cards = hub.querySelectorAll('[data-contact-card]');
-    if (cards.length) {
-      gsap.from(cards, {
-        y: 34,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: cards[0], start: 'top 85%', once: true },
-      });
-    }
-
-    const form = hub.querySelector('[data-contact-form]');
-    if (form) {
-      gsap.from(form, {
-        x: -40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: form, start: 'top 80%' },
-      });
-    }
-
-    const social = hub.querySelector('[data-contact-social]');
-    if (social) {
-      gsap.from(social, {
-        x: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: social, start: 'top 80%' },
-      });
-    }
-
+    /* Orb parallax — only visual effect, no reveal conflicts */
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const orbs = Array.from(hub.querySelectorAll<HTMLElement>('.contact-hub__orb'));
