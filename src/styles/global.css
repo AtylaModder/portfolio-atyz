@@ -556,6 +556,74 @@ button, input, textarea { font: inherit; }
   transform: translateY(-2px);
 }
 
+/* Magnetic button — allow GSAP x/y without fighting CSS transforms */
+.btn {
+  will-change: transform;
+}
+
+/* ═══════════════════════════════════════════════
+   PROJECT CARD — 3D TILT
+   ═══════════════════════════════════════════════ */
+.project-row {
+  perspective: 800px;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: box-shadow 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.project-row:hover {
+  box-shadow: 0 12px 40px var(--primary-a15);
+}
+
+/* Specular highlight overlay (injected by JS) */
+.card-specular {
+  --spec-x: 50;
+  --spec-y: 50;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    600px circle at calc(var(--spec-x) * 1%) calc(var(--spec-y) * 1%),
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 60%
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   ICON SCALE + GLOW (CSS-only)
+   ═══════════════════════════════════════════════ */
+.contact-card__icon,
+.stats__item .stats__number-wrap {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contact-card:hover .contact-card__icon {
+  transform: scale(1.12);
+  box-shadow: 0 0 28px var(--primary-a30), 0 0 8px var(--primary-a15);
+}
+
+.stats__item:hover .stats__number-wrap {
+  transform: scale(1.08);
+}
+
+/* Story section icon glow on hover */
+.story__icon-circle {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.3s ease;
+}
+
+.story__icon-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px var(--primary-a20);
+}
+
 /* ═══════════════════════════════════════════════
    STORY (ABOUT) SECTION
    ═══════════════════════════════════════════════ */
@@ -2412,13 +2480,11 @@ button, input, textarea { font: inherit; }
   font-size: var(--text-h3);
   color: var(--color-primary);
   margin-bottom: 1rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.contact-card:hover .contact-card__icon {
-  transform: scale(1.1);
-  box-shadow: 0 0 24px var(--primary-a20);
-}
+/* hover rule in microinteractions CSS block above */
 
 .contact-card__label {
   font-size: var(--text-xs);
