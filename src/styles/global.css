@@ -266,8 +266,10 @@ button, input, textarea { font: inherit; }
 
 .header.is-scrolled {
   background: var(--header-bg-scrolled);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+  border-top: 1px solid var(--glass-highlight);
   padding: 0.85rem 0;
 }
 
@@ -595,9 +597,15 @@ button, input, textarea { font: inherit; }
   perspective: 800px;
   transform-style: preserve-3d;
   will-change: transform;
-  transition: box-shadow 0.4s ease;
+  transition: box-shadow 0.4s ease, background 0.4s ease;
   position: relative;
   overflow: hidden;
+  background: var(--color-surface-72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-highlight);
+  border-radius: var(--radius-2xl);
 }
 
 .project-row:hover {
@@ -1696,9 +1704,9 @@ button, input, textarea { font: inherit; }
 .model-lightbox__backdrop {
   position: absolute;
   inset: 0;
-  background: var(--overlay-heavy);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  background: rgba(8, 10, 14, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
 .model-lightbox__body {
@@ -2164,9 +2172,9 @@ button, input, textarea { font: inherit; }
 .visuals-lightbox__backdrop {
   position: absolute;
   inset: 0;
-  background: var(--overlay-heaviest);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
+  background: rgba(8, 10, 14, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
 .visuals-lightbox__body {

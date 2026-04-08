@@ -168,7 +168,9 @@
   --overlay-heavier:        rgba(8, 10, 14, 0.9);
   --overlay-heaviest:       rgba(8, 10, 14, 0.92);
   --overlay-card:           rgba(14, 18, 24, 0.92);
-  --header-bg-scrolled:     rgba(15, 19, 24, 0.92);
+  --header-bg-scrolled:     rgba(15, 19, 24, 0.72);
+  --glass-border:            rgba(255, 255, 255, 0.12);
+  --glass-highlight:         rgba(255, 255, 255, 0.2);
   --color-selection-bg:     rgba(231, 195, 79, 0.3);
 
   /* ── TYPOGRAPHY : Font Families ────────────────────────────── */
