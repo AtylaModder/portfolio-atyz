@@ -1,0 +1,36 @@
+---
+import LoadingScreen from '../components/LoadingScreen.astro';
+import ContactSection from '../components/ContactSection.astro';
+import FeaturedProjectsSection from '../components/FeaturedProjectsSection.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import HeroSection from '../components/HeroSection.astro';
+import ModelCarousel from '../components/ModelCarousel.astro';
+import StorySection from '../components/StorySection.astro';
+import StatsSection from '../components/StatsSection.astro';
+import TeamsSection from '../components/TeamsSection.astro';
+import VibrantVisualsSection from '../components/VibrantVisualsSection.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteMeta } from '../data/site';
+---
+
+<BaseLayout title={siteMeta.title} description={siteMeta.description}>
+  <LoadingScreen />
+
+  <div class="page-wrap">
+    <Header />
+
+    <main>
+      <HeroSection />
+      <StorySection />
+      <StatsSection />
+      <FeaturedProjectsSection />
+      <TeamsSection />
+      <ModelCarousel />
+      <VibrantVisualsSection />
+      <ContactSection />
+    </main>
+
+    <Footer />
+  </div>
+</BaseLayout>

@@ -1,0 +1,69 @@
+---
+import { teams } from '../data/site';
+---
+
+<section id="teams" class="teams-section section-anchor">
+  <div class="container-shell" style="position:relative;z-index:1;">
+    <div class="teams-section__heading reveal-up">
+      <span class="section-eyebrow">Equipes</span>
+      <h2 class="section-title">Quem eu <span class="teams-title-accent">trabalho</span></h2>
+      <p class="section-subtitle">Equipes incríveis que confiam no meu trabalho.</p>
+    </div>
+
+    <div class="teams-strip reveal-stagger reveal-up">
+      {teams.map((team, i) => {
+        const Tag = team.link ? 'a' : 'div';
+        const linkProps = team.link ? { href: team.link, target: '_blank', rel: 'noopener noreferrer' } : {};
+        return (
+          <Tag
+            class:list={['team-item', `team-item--${team.accent}`]}
+            style={`--team-delay: ${i * 0.15}s`}
+            {...linkProps}
+          >
+            <div class="team-item__avatar-ring">
+              <img
+                src={team.image}
+                alt={team.name}
+                class="team-item__avatar"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+
+            <div class="team-item__body">
+              <h3 class="team-item__name">{team.name}</h3>
+              <span class="team-item__role">{team.role}</span>
+              <p class="team-item__note">{team.note}</p>
+            </div>
+
+            <div class="team-item__line"></div>
+          </Tag>
+        );
+      })}
+    </div>
+  </div>
+</section>
+
+<script>
+  function initTeamsReveal() {
+    const items = document.querySelectorAll<HTMLElement>('.team-item');
+    if (!items.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -30px 0px' }
+    );
+
+    items.forEach((item) => observer.observe(item));
+  }
+
+  initTeamsReveal();
+  document.addEventListener('astro:page-load', initTeamsReveal);
+</script>

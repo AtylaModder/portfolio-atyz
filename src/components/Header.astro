@@ -1,0 +1,22 @@
+---
+import { navigation } from '../data/site';
+---
+
+<header id="site-header" class="header" transition:name="header">
+  <div class="container-shell header__inner">
+    <a href="#topo" class="header__logo" transition:name="logo">
+      <div class="header__mark" aria-hidden="true"></div>
+      <span class="header__brand">Atyz Modder</span>
+    </a>
+
+    <nav aria-label="Navegação principal">
+      <ul class="header__nav">
+        {navigation.map((item) => (
+          <li><a href={item.href}>{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <a href="#contact" class="btn btn--outline btn--sm">Contato</a>
+  </div>
+</header>

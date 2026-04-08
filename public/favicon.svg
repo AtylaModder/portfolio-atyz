@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="8" fill="#0f1318"/>
+  <g transform="translate(32,32) rotate(45)">
+    <rect x="-18" y="-18" width="36" height="36" rx="3" fill="url(#diamond_grad)"/>
+    <rect x="-6" y="-6" width="12" height="12" rx="1" fill="#0f1318"/>
+  </g>
+  <defs>
+    <linearGradient id="diamond_grad" x1="-18" y1="-18" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e7c34f"/>
+      <stop offset="1" stop-color="#FFB366"/>
+    </linearGradient>
+  </defs>
+</svg>

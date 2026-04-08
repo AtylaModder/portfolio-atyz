@@ -1,0 +1,38 @@
+---
+import { heroData } from '../data/site';
+---
+
+<section id="topo" class="hero">
+  <!-- Formas geométricas flutuantes inspiradas em Minecraft -->
+  <div class="hero__shapes" aria-hidden="true">
+    <div class="hero__shape hero__shape--diamond" data-parallax="0.3"></div>
+    <div class="hero__shape hero__shape--cube" data-parallax="0.5"></div>
+    <div class="hero__shape hero__shape--ring" data-parallax="0.2"></div>
+    <div class="hero__shape hero__shape--dot hero__shape--dot-1" data-parallax="0.4"></div>
+    <div class="hero__shape hero__shape--dot hero__shape--dot-2" data-parallax="0.6"></div>
+    <div class="hero__shape hero__shape--line hero__shape--line-1" data-parallax="0.15"></div>
+    <div class="hero__shape hero__shape--line hero__shape--line-2" data-parallax="0.35"></div>
+  </div>
+
+  <!-- Grid de fundo estilo Minecraft -->
+  <div class="hero__grid-overlay" aria-hidden="true"></div>
+
+  <!-- Gradiente diagonal estilo portfolioantigo1 -->
+  <div class="hero__diagonal" aria-hidden="true"></div>
+
+  <div class="container-shell hero__content">
+    <span class="hero__tag">{heroData.tag}</span>
+    <h1 class="hero__title">{heroData.name}</h1>
+    <p class="hero__subtitle">{heroData.subtitle}</p>
+    <div class="hero__cta">
+      <a href="#projects" class="btn btn--primary">Ver Projetos</a>
+      <a href="#contact" class="btn btn--outline">Contato</a>
+    </div>
+  </div>
+
+  <!-- Indicador de scroll -->
+  <div class="hero__scroll" aria-hidden="true">
+    <span class="hero__scroll-text">Scroll</span>
+    <div class="hero__scroll-line"></div>
+  </div>
+</section>

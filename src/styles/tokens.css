@@ -1,0 +1,297 @@
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Single source of truth
+   Every visual value in the project references these tokens.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── COLORS : Core Palette ─────────────────────────────────── */
+  --color-primary:          #e7c34f;
+  --color-primary-light:    #f4e5af;
+  --color-secondary:        #FFB366;
+  --color-accent:           #FF8A80;
+  --color-cyan:             rgb(80, 200, 220);
+  --color-violet:           rgb(160, 120, 255);
+  --color-green:            #4CAF50;
+  --color-green-dark:       #388E3C;
+  --color-red:              #E53935;
+  --color-red-dark:         #C62828;
+
+  /* ── COLORS : Backgrounds ──────────────────────────────────── */
+  --color-bg:               #0f1318;
+  --color-bg-soft:          #141a21;
+  --color-bg-card:          #181e26;
+  --color-bg-card-deep:     #0e1218;
+  --color-bg-overlay:       rgb(8, 10, 14);
+  --color-bg-footer:        #080a0e;
+  --color-bg-footer-deep:   #050608;
+
+  /* ── COLORS : Surfaces ─────────────────────────────────────── */
+  --color-surface:          rgba(21, 27, 34, 0.84);
+  --color-surface-dark:     rgba(12, 16, 22, 0.8);
+  --color-surface-72:       rgba(21, 27, 34, 0.72);
+  --color-surface-78:       rgba(21, 27, 34, 0.78);
+  --color-surface-strong:   rgba(30, 37, 46, 0.94);
+  --color-surface-card:     rgba(24, 30, 38, 0.96);
+  --color-surface-card-deep: rgba(14, 18, 24, 0.98);
+  --color-contact-card-top: rgba(34, 41, 50, 0.99);
+  --color-contact-card-bot: rgba(21, 27, 34, 0.97);
+
+  /* ── COLORS : Text ─────────────────────────────────────────── */
+  --color-text:             #f3f1ea;
+  --color-text-warm:        #f7f5ee;
+  --color-text-label:       rgba(243, 241, 234, 0.82);
+  --color-muted:            #8a94a6;
+  --color-muted-60:         rgba(138, 148, 166, 0.6);
+  --color-sand:             #efe1b5;
+  --color-selection:        #fff6df;
+
+  /* ── COLORS : Accent hovers (per-variant title color) ───── */
+  --color-hover-amber:      #f4e5af;
+  --color-hover-coral:      #ffb8b0;
+  --color-hover-cyan:       #b0eef5;
+  --color-hover-violet:     #d4c0ff;
+  --color-hover-green:      #a5d6a7;
+  --color-hover-red:        #ef9a9a;
+
+  /* ── COLORS : Status ───────────────────────────────────────── */
+  --color-green-light:      #81c784;
+  --color-green-pale:       #a5d6a7;
+
+  /* ── COLORS : Borders ──────────────────────────────────────── */
+  --color-border:           rgba(255, 255, 255, 0.08);
+  --color-border-subtle:    rgba(255, 255, 255, 0.06);
+  --color-border-faint:     rgba(255, 255, 255, 0.04);
+  --color-border-soft:      rgba(255, 255, 255, 0.1);
+  --color-border-muted:     rgba(255, 255, 255, 0.15);
+  --color-border-dashed:    rgba(255, 255, 255, 0.16);
+
+  /* ── COLORS : Alpha helpers ────────────────────────────────── */
+  --alpha-white-02:         rgba(255, 255, 255, 0.02);
+  --alpha-white-03:         rgba(255, 255, 255, 0.03);
+  --alpha-white-035:        rgba(255, 255, 255, 0.035);
+  --alpha-white-04:         rgba(255, 255, 255, 0.04);
+  --alpha-white-05:         rgba(255, 255, 255, 0.05);
+  --alpha-white-06:         rgba(255, 255, 255, 0.06);
+  --alpha-white-08:         rgba(255, 255, 255, 0.08);
+  --alpha-white-10:         rgba(255, 255, 255, 0.10);
+  --alpha-white-12:         rgba(255, 255, 255, 0.12);
+  --alpha-white-015:        rgba(255, 255, 255, 0.015);
+  --alpha-white-70:         rgba(255, 255, 255, 0.7);
+  --alpha-black-18:         rgba(0, 0, 0, 0.18);
+  --alpha-black-24:         rgba(0, 0, 0, 0.24);
+  --alpha-black-25:         rgba(0, 0, 0, 0.25);
+  --alpha-black-28:         rgba(0, 0, 0, 0.28);
+  --alpha-black-30:         rgba(0, 0, 0, 0.30);
+  --alpha-black-32:         rgba(0, 0, 0, 0.32);
+  --alpha-black-35:         rgba(0, 0, 0, 0.35);
+  --alpha-black-40:         rgba(0, 0, 0, 0.40);
+  --alpha-black-45:         rgba(0, 0, 0, 0.45);
+  --alpha-black-50:         rgba(0, 0, 0, 0.50);
+
+  /* ── COLORS : Primary alpha ────────────────────────────────── */
+  --primary-a02:            rgba(231, 195, 79, 0.02);
+  --primary-a03:            rgba(231, 195, 79, 0.03);
+  --primary-a04:            rgba(231, 195, 79, 0.04);
+  --primary-a06:            rgba(231, 195, 79, 0.06);
+  --primary-a07:            rgba(231, 195, 79, 0.07);
+  --primary-a08:            rgba(231, 195, 79, 0.08);
+  --primary-a10:            rgba(231, 195, 79, 0.10);
+  --primary-a12:            rgba(231, 195, 79, 0.12);
+  --primary-a012:           rgba(231, 195, 79, 0.012);
+  --primary-a015:           rgba(231, 195, 79, 0.015);
+  --primary-a14:            rgba(231, 195, 79, 0.14);
+  --primary-a15:            rgba(231, 195, 79, 0.15);
+  --primary-a18:            rgba(231, 195, 79, 0.18);
+  --primary-a20:            rgba(231, 195, 79, 0.20);
+  --primary-a22:            rgba(231, 195, 79, 0.22);
+  --primary-a25:            rgba(231, 195, 79, 0.25);
+  --primary-a28:            rgba(231, 195, 79, 0.28);
+  --primary-a30:            rgba(231, 195, 79, 0.30);
+  --primary-a35:            rgba(231, 195, 79, 0.35);
+  --primary-a40:            rgba(231, 195, 79, 0.40);
+  --primary-a50:            rgba(231, 195, 79, 0.50);
+  --primary-a55:            rgba(231, 195, 79, 0.55);
+  --primary-a90:            rgba(231, 195, 79, 0.9);
+
+  /* ── COLORS : Secondary alpha ──────────────────────────────── */
+  --secondary-a015:         rgba(255, 179, 102, 0.015);
+  --secondary-a05:          rgba(255, 179, 102, 0.05);
+  --secondary-a06:          rgba(255, 179, 102, 0.06);
+  --secondary-a08:          rgba(255, 179, 102, 0.08);
+  --secondary-a10:          rgba(255, 179, 102, 0.10);
+  --secondary-a15:          rgba(255, 179, 102, 0.15);
+  --secondary-a18:          rgba(255, 179, 102, 0.18);
+  --secondary-a30:          rgba(255, 179, 102, 0.30);
+  --secondary-a32:          rgba(255, 179, 102, 0.32);
+  --secondary-a90:          rgba(255, 179, 102, 0.9);
+
+  /* ── COLORS : Accent alpha ─────────────────────────────────── */
+  --accent-a07:             rgba(255, 138, 128, 0.07);
+  --accent-a08:             rgba(255, 138, 128, 0.08);
+  --accent-a14:             rgba(255, 138, 128, 0.14);
+  --accent-a16:             rgba(255, 138, 128, 0.16);
+  --accent-a28:             rgba(255, 138, 128, 0.28);
+
+  /* ── COLORS : Cyan alpha ───────────────────────────────────── */
+  --cyan-a14:               rgba(80, 200, 220, 0.14);
+  --cyan-a28:               rgba(80, 200, 220, 0.28);
+
+  /* ── COLORS : Violet alpha ─────────────────────────────────── */
+  --violet-a14:             rgba(160, 120, 255, 0.14);
+  --violet-a28:             rgba(160, 120, 255, 0.28);
+
+  /* ── COLORS : Green alpha ──────────────────────────────────── */
+  --green-a05:              rgba(76, 175, 80, 0.05);
+  --green-a15:              rgba(76, 175, 80, 0.15);
+  --green-a25:              rgba(76, 175, 80, 0.25);
+  --green-a30:              rgba(76, 175, 80, 0.30);
+  --green-a35:              rgba(76, 175, 80, 0.35);
+  --green-a50:              rgba(76, 175, 80, 0.50);
+  --green-a55:              rgba(76, 175, 80, 0.55);
+
+  /* ── COLORS : Red alpha ────────────────────────────────────── */
+  --red-a25:                rgba(229, 57, 53, 0.25);
+  --red-a30:                rgba(229, 57, 53, 0.30);
+  --red-a35:                rgba(229, 57, 53, 0.35);
+  --red-a55:                rgba(229, 57, 53, 0.55);
+
+  /* ── COLORS : Red-dark alpha ───────────────────────────────── */
+  --red-dark-a30:           rgba(198, 40, 40, 0.30);
+
+  /* ── COLORS : Green-dark alpha ─────────────────────────────── */
+  --green-dark-a30:         rgba(56, 142, 60, 0.30);
+
+  /* ── COLORS : Overlay BG ───────────────────────────────────── */
+  --overlay-light:          rgba(8, 10, 14, 0.3);
+  --overlay-heavy:          rgba(8, 10, 14, 0.88);
+  --overlay-heavier:        rgba(8, 10, 14, 0.9);
+  --overlay-heaviest:       rgba(8, 10, 14, 0.92);
+  --overlay-card:           rgba(14, 18, 24, 0.92);
+  --header-bg-scrolled:     rgba(15, 19, 24, 0.92);
+  --color-selection-bg:     rgba(231, 195, 79, 0.3);
+
+  /* ── TYPOGRAPHY : Font Families ────────────────────────────── */
+  --font-display:           'Montserrat', sans-serif;
+  --font-body:              'Montserrat', sans-serif;
+
+  /* ── TYPOGRAPHY : Typographic Scale (semantic) ──────────────── */
+  --text-hero:   clamp(4rem, 15vw, 12rem);   /* hero display only           */
+  --text-stat:   3rem;                         /* stat counter numbers        */
+  --text-h1:     clamp(2rem, 5vw, 3.2rem);    /* section headings            */
+  --text-h2:     1.5rem;                       /* card / overlay titles       */
+  --text-h3:     1.15rem;                      /* sub-headings, names, brands */
+  --text-body:   0.95rem;                      /* paragraphs, inputs, values  */
+  --text-sm:     0.82rem;                      /* UI labels, buttons, captions*/
+  --text-xs:     0.72rem;                      /* tags, badges, eyebrows      */
+
+  /* ── TYPOGRAPHY : Font Weight (3 values only) ──────────────── */
+  --fw-normal:   400;    /* body copy       */
+  --fw-bold:     700;    /* UI emphasis     */
+  --fw-black:    800;    /* display headings */
+
+  /* ── TYPOGRAPHY : Line Height ──────────────────────────────── */
+  --lh-none:     1;      /* icons, single-line numbers */
+  --lh-tight:    1.1;    /* display / hero headings    */
+  --lh-snug:     1.3;    /* card titles, sub-headings  */
+  --lh-normal:   1.65;   /* body text, paragraphs      */
+
+  /* ── SPACING ───────────────────────────────────────────────── */
+  --space-1:    0.2rem;
+  --space-2:    0.25rem;
+  --space-3:    0.3rem;
+  --space-4:    0.35rem;
+  --space-5:    0.4rem;
+  --space-6:    0.45rem;
+  --space-7:    0.5rem;
+  --space-8:    0.55rem;
+  --space-9:    0.6rem;
+  --space-10:   0.65rem;
+  --space-11:   0.75rem;
+  --space-12:   0.85rem;
+  --space-13:   0.9rem;
+  --space-14:   1rem;
+  --space-15:   1.2rem;
+  --space-16:   1.25rem;
+  --space-17:   1.4rem;
+  --space-18:   1.5rem;
+  --space-19:   1.75rem;
+  --space-20:   2rem;
+  --space-22:   2.5rem;
+  --space-24:   3rem;
+  --space-26:   3.5rem;
+  --space-28:   4rem;
+  --space-30:   5rem;
+  --space-32:   6rem;
+  --space-34:   7rem;
+  --space-36:   8rem;
+
+  /* ── BORDER RADIUS ─────────────────────────────────────────── */
+  --radius-xs:    2px;
+  --radius-sm:    4px;
+  --radius-md:    6px;
+  --radius-lg:    8px;
+  --radius-xl:    10px;
+  --radius-2xl:   12px;
+  --radius-3xl:   14px;
+  --radius-4xl:   16px;
+  --radius-5xl:   18px;
+  --radius-6xl:   20px;
+  --radius-7xl:   32px;
+  --radius-pill:  999px;
+  --radius-full:  50%;
+
+  /* ── SHADOWS ───────────────────────────────────────────────── */
+  --shadow-soft:        0 24px 64px rgba(0, 0, 0, 0.34);
+  --shadow-card:        0 12px 40px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-card-hover:  0 28px 64px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(231, 195, 79, 0.2), 0 0 48px rgba(231, 195, 79, 0.06);
+  --shadow-team:        0 8px 32px rgba(0, 0, 0, 0.28);
+  --shadow-team-hover:  0 20px 48px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(231, 195, 79, 0.12);
+  --shadow-model-card:  0 12px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-model-hover: 0 28px 64px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(231, 195, 79, 0.18), 0 0 40px rgba(231, 195, 79, 0.06);
+  --shadow-contact:     0 20px 48px rgba(0, 0, 0, 0.32);
+  --shadow-contact-hover: 0 18px 52px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(231, 195, 79, 0.1);
+  --shadow-lightbox:    0 40px 80px rgba(0, 0, 0, 0.5);
+  --shadow-btn-hover:   0 8px 24px rgba(231, 195, 79, 0.25);
+  --shadow-submit-hover: 0 8px 30px rgba(231, 195, 79, 0.3);
+  --shadow-social-hover: 0 6px 20px rgba(231, 195, 79, 0.2);
+  --shadow-glow-primary: 0 0 12px rgba(231, 195, 79, 0.5);
+  --shadow-3d-badge:    0 2px 8px rgba(231, 195, 79, 0.3);
+  --shadow-focus:       0 0 0 3px rgba(231, 195, 79, 0.08);
+  --shadow-status-dot:  0 0 8px rgba(76, 175, 80, 0.5);
+  --shadow-green-glow:  0 0 24px rgba(76, 175, 80, 0.25);
+  --shadow-primary-glow: 0 0 24px rgba(231, 195, 79, 0.25);
+  --shadow-red-glow:    0 0 24px rgba(229, 57, 53, 0.25);
+
+  /* ── EASING ────────────────────────────────────────────────── */
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart:  cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Z-INDEX ───────────────────────────────────────────────── */
+  --z-header:     100;
+  --z-lightbox:   9998;
+  --z-lightbox-3d: 9999;
+  --z-loader:     9999;
+
+  /* ── SECTION SPACING ────────────────────────────────────────── */
+  --section-gap-sm:  5rem;   /* compact: stats, teams-top           */
+  --section-gap-md:  7rem;   /* standard: story, projects/models/visuals-top */
+  --section-gap-lg:  8rem;   /* generous: projects/models/visuals-bottom      */
+
+  /* ── GRADIENTS (reusable) ──────────────────────────────────── */
+  --gradient-gold:       linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  --gradient-gold-full:  linear-gradient(135deg, var(--color-primary-light), var(--color-primary), var(--color-secondary));
+  --gradient-accent:     linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+  --gradient-card:       linear-gradient(160deg, var(--color-bg-card) 0%, var(--color-bg-card-deep) 100%);
+  --gradient-divider:    linear-gradient(90deg, transparent, var(--color-primary), transparent);
+}
+
+/* ── Responsive section spacing ──────────────────────────────── */
+@media (max-width: 767px) {
+  :root {
+    --section-gap-sm: 4rem;
+    --section-gap-md: 5rem;
+    --section-gap-lg: 6rem;
+  }
+}

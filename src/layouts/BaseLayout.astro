@@ -1,0 +1,171 @@
+---
+import '../styles/global.css';
+import { siteMeta } from '../data/site';
+import { ClientRouter } from 'astro:transitions';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = siteMeta.title,
+  description = siteMeta.description,
+} = Astro.props;
+
+const pageTitle = title === siteMeta.title ? title : `${title} | ${siteMeta.shortTitle}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? siteMeta.url).toString();
+const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString();
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={siteMeta.keywords.join(', ')} />
+    <meta name="robots" content="index,follow" />
+    <meta name="theme-color" content="#0f1318" />
+    <meta name="author" content="Atyla Smith" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <ClientRouter />
+  </head>
+  <body class="is-loading">
+    <div id="geo-bg" aria-hidden="true" transition:persist transition:name="geo-bg">
+      <canvas class="geo-layer geo-layer--far"></canvas>
+      <canvas class="geo-layer geo-layer--mid"></canvas>
+      <canvas class="geo-layer geo-layer--near"></canvas>
+    </div>
+    <slot />
+
+    <script>
+      import { initGeoBackground } from '../lib/geo-background';
+      import { initRevealAnimations } from '../scripts/animations';
+      import gsap from 'gsap';
+      import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      let geoInitialized = false;
+
+      document.addEventListener('astro:page-load', () => {
+        /* ── Geo background (persisted — init once) ── */
+        if (!geoInitialized) {
+          initGeoBackground();
+          geoInitialized = true;
+        }
+
+        /* ── Clean up previous ScrollTriggers on navigation ── */
+        ScrollTrigger.getAll().forEach((t) => t.kill());
+
+        /* ── Loading Screen ────────────────────────── */
+        const loader = document.getElementById('loader');
+        const pageWrap = document.querySelector('.page-wrap') as HTMLElement;
+
+        if (loader) {
+          gsap.to(loader, {
+            opacity: 0,
+            duration: 0.6,
+            delay: 2.2,
+            ease: 'power2.inOut',
+            onComplete: () => {
+              loader.style.display = 'none';
+              document.body.classList.remove('is-loading');
+              if (pageWrap) pageWrap.style.opacity = '1';
+              animateHero();
+              setupScrollAnimations();
+              initRevealAnimations();
+            },
+          });
+        } else {
+          document.body.classList.remove('is-loading');
+          if (pageWrap) pageWrap.style.opacity = '1';
+          animateHero();
+          setupScrollAnimations();
+          initRevealAnimations();
+        }
+      });
+
+      /* ── Hero Entrance ─────────────────────────── */
+      function animateHero() {
+        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+        tl.from('.hero__tag', { y: 40, opacity: 0, duration: 0.8 })
+          .from('.hero__title', { y: 60, opacity: 0, duration: 1 }, '-=0.5')
+          .from('.hero__subtitle', { y: 40, opacity: 0, duration: 0.8 }, '-=0.6')
+          .from('.hero__cta', { y: 30, opacity: 0, duration: 0.7 }, '-=0.4')
+          .from('.hero__scroll', { opacity: 0, duration: 0.6 }, '-=0.2');
+      }
+
+      /* ── All Scroll-Driven Animations ──────────── */
+      function setupScrollAnimations() {
+        /* Parallax shapes in hero */
+        document.querySelectorAll('[data-parallax]').forEach((el) => {
+          const speed = parseFloat((el as HTMLElement).dataset.parallax || '0.5');
+          gsap.to(el, {
+            y: () => window.innerHeight * speed * -0.4,
+            scrollTrigger: {
+              trigger: '.hero',
+              start: 'top top',
+              end: 'bottom top',
+              scrub: 1,
+            },
+          });
+        });
+
+        /* Header scroll state */
+        const header = document.getElementById('site-header');
+        if (header) {
+          ScrollTrigger.create({
+            start: 80,
+            onUpdate: (self) => {
+              if (self.direction === 1 && window.scrollY > 80) {
+                header.classList.add('is-scrolled');
+              } else if (window.scrollY <= 80) {
+                header.classList.remove('is-scrolled');
+              }
+            },
+          });
+        }
+
+        /* Stats counter animation */
+        document.querySelectorAll('[data-counter]').forEach((el) => {
+          const target = parseInt((el as HTMLElement).dataset.counter || '0', 10);
+          const obj = { val: 0 };
+
+          ScrollTrigger.create({
+            trigger: el,
+            start: 'top 85%',
+            once: true,
+            onEnter: () => {
+              gsap.to(obj, {
+                val: target,
+                duration: 2,
+                ease: 'power2.out',
+                onUpdate: () => {
+                  (el as HTMLElement).textContent = Math.round(obj.val).toString();
+                },
+              });
+            },
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

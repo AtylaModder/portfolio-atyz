@@ -1,0 +1,31 @@
+---
+interface Props {
+  label: string;
+  note?: string;
+  aspect?: 'landscape' | 'portrait' | 'square';
+  class?: string;
+}
+
+const {
+  label,
+  note = 'Asset pendente',
+  aspect = 'landscape',
+  class: className = '',
+} = Astro.props;
+
+const aspectClass = aspect === 'portrait'
+  ? 'aspect-[4/5]'
+  : aspect === 'square'
+    ? 'aspect-square'
+    : 'aspect-[16/10]';
+---
+
+<div class:list={['placeholder-frame glass-panel rounded-[1.75rem] p-5 sm:p-6', aspectClass, className]}>
+  <div class="relative z-10 flex h-full flex-col justify-between gap-4">
+    <span class="pill w-fit">Espaço reservado</span>
+    <div class="max-w-sm">
+      <h3 class="display-title text-xl font-semibold text-white">{label}</h3>
+      <p class="muted mt-2 text-sm leading-7">{note}</p>
+    </div>
+  </div>
+</div>

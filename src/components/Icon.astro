@@ -1,0 +1,57 @@
+---
+interface Props {
+  name:
+    | 'texture'
+    | 'materials'
+    | 'lighting'
+    | 'direction'
+    | 'assets'
+    | 'interface'
+    | 'concept'
+    | 'study'
+    | 'build'
+    | 'refine'
+    | 'deliver';
+  class?: string;
+}
+
+const { name, class: className = 'h-6 w-6' } = Astro.props;
+
+const icons: Record<Props['name'], string> = {
+  texture:
+    '<rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M9.5 4v16"></path><path d="M4 9.5h16"></path>',
+  materials:
+    '<circle cx="12" cy="12" r="3.5"></circle><path d="M12 2.75v2.5"></path><path d="M12 18.75v2.5"></path><path d="M21.25 12h-2.5"></path><path d="M5.25 12h-2.5"></path><path d="M18.55 5.45l-1.75 1.75"></path><path d="M7.2 16.8l-1.75 1.75"></path><path d="M18.55 18.55l-1.75-1.75"></path><path d="M7.2 7.2 5.45 5.45"></path>',
+  lighting:
+    '<path d="M9.5 18.5h5"></path><path d="M10 22h4"></path><path d="M8 14.75c-1.12-.91-1.75-2.23-1.75-3.75A5.75 5.75 0 0 1 12 5.25 5.75 5.75 0 0 1 17.75 11c0 1.52-.63 2.84-1.75 3.75-.82.66-1.25 1.37-1.25 2.25v.5h-5.5V17c0-.88-.43-1.59-1.25-2.25Z"></path>',
+  direction:
+    '<path d="M12 3 18.5 9.5 12 21 5.5 9.5 12 3Z"></path><path d="M12 8.5v5"></path>',
+  assets:
+    '<path d="M12 3 19 7v10l-7 4-7-4V7l7-4Z"></path><path d="M12 3v8"></path><path d="M19 7l-7 4-7-4"></path>',
+  interface:
+    '<rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M3 9h18"></path><path d="M8 13h3"></path><path d="M13 13h5"></path><path d="M8 17h10"></path>',
+  concept:
+    '<path d="M4.5 19.5 12 4l7.5 15.5"></path><path d="M8.5 13.25h7"></path><path d="M10.25 17h3.5"></path>',
+  study:
+    '<path d="M6 4.5h8.5a3.5 3.5 0 0 1 0 7H12"></path><path d="M6 4.5v15"></path><path d="M6 12h8.5"></path><path d="M17.5 16.5 20 19"></path><circle cx="15.5" cy="14.5" r="2.5"></circle>',
+  build:
+    '<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"></path><path d="M12 11.5 20 8"></path><path d="M12 11.5 4 8"></path><path d="M12 11.5V20"></path>',
+  refine:
+    '<path d="M6 14.5 12 4l6 10.5"></path><path d="M9.5 14.5 12 10l2.5 4.5"></path><path d="M7.5 18.5h9"></path>',
+  deliver:
+    '<path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"></path><path d="m9 12 2 2 4-4"></path>',
+};
+---
+
+<svg
+  class={className}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <g set:html={icons[name]}></g>
+</svg>

@@ -1,0 +1,167 @@
+---
+import { visualCategories, visuals } from '../data/site';
+---
+
+<section id="visuals" class="visuals-section section-anchor">
+  <!-- Atmospheric background -->
+  <div class="visuals-section__bg" aria-hidden="true">
+    <div class="visuals-section__orb visuals-section__orb--1"></div>
+    <div class="visuals-section__orb visuals-section__orb--2"></div>
+    <div class="visuals-section__orb visuals-section__orb--3"></div>
+  </div>
+
+  <div class="container-shell" style="position:relative;z-index:1;">
+    <!-- Header -->
+    <div class="visuals-section__heading reveal-up">
+      <span class="section-eyebrow">Vibrant Visuals</span>
+      <h2 class="section-title">
+        PBR & <span class="visuals-title-accent">Iluminação</span>
+      </h2>
+      <p class="section-subtitle">
+        Texturas com physically-based rendering, shaders de iluminação e efeitos visuais
+        que transformam o Minecraft Bedrock em uma experiência cinematográfica.
+      </p>
+      <div class="visuals-section__divider">
+        <span class="visuals-section__divider-dot"></span>
+      </div>
+    </div>
+
+    <!-- Category filters -->
+    <div class="visuals-section__filters reveal-up" data-delay="0.15">
+      {visualCategories.map((cat, i) => (
+        <button
+          class:list={['visuals-filter', i === 0 && 'active']}
+          data-vcat={cat.toLowerCase()}
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
+
+    <!-- Masonry-style gallery -->
+    <div class="visuals-gallery" id="visuals-gallery">
+      {visuals.map((item, index) => (
+        <div
+          class="visuals-card"
+          data-vcat={item.category}
+          style={`--v-delay: ${index * 0.08}s`}
+        >
+          <div class="visuals-card__inner">
+            <img
+              src={item.image}
+              alt={item.title}
+              class="visuals-card__image"
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="visuals-card__overlay">
+              <div class="visuals-card__info">
+                <span class="visuals-card__category">{item.category}</span>
+                <h3 class="visuals-card__title">{item.title}</h3>
+                {item.caption && <p class="visuals-card__caption">{item.caption}</p>}
+              </div>
+              <div class="visuals-card__zoom-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  <line x1="11" y1="8" x2="11" y2="14"/>
+                  <line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+              </div>
+            </div>
+            <div class="visuals-card__shine"></div>
+            <div class="visuals-card__border"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Fullscreen lightbox -->
+  <div class="visuals-lightbox" id="visuals-lightbox" aria-hidden="true">
+    <div class="visuals-lightbox__backdrop"></div>
+    <div class="visuals-lightbox__body">
+      <button class="visuals-lightbox__close" id="vlb-close" aria-label="Fechar"></button>
+      <img class="visuals-lightbox__image" id="vlb-img" alt="" />
+      <p class="visuals-lightbox__title" id="vlb-title"></p>
+    </div>
+  </div>
+</section>
+
+<script>
+  /* ── Filter logic ───────────────────────────────── */
+  const gallery = document.getElementById('visuals-gallery')!;
+  const cards = gallery.querySelectorAll<HTMLElement>('.visuals-card');
+  const filters = document.querySelectorAll<HTMLElement>('.visuals-filter');
+
+  filters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filters.forEach(f => f.classList.remove('active'));
+      btn.classList.add('active');
+      const cat = btn.dataset.vcat || 'all';
+
+      cards.forEach(card => {
+        const match = cat === 'all' || card.dataset.vcat === cat;
+        card.style.display = match ? '' : 'none';
+        if (match) {
+          card.classList.remove('is-visible');
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              card.classList.add('is-visible');
+            });
+          });
+        }
+      });
+    });
+  });
+
+  /* ── Scroll reveal ──────────────────────────────── */
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement).classList.add('is-visible');
+        }
+      });
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+  );
+  cards.forEach(card => observer.observe(card));
+
+  /* ── Lightbox ───────────────────────────────────── */
+  const lb = document.getElementById('visuals-lightbox')!;
+  const lbImg = document.getElementById('vlb-img') as HTMLImageElement;
+  const lbTitle = document.getElementById('vlb-title')!;
+
+  gallery.addEventListener('click', (e) => {
+    const card = (e.target as HTMLElement).closest('.visuals-card') as HTMLElement | null;
+    if (!card) return;
+    const img = card.querySelector<HTMLImageElement>('.visuals-card__image');
+    const title = card.querySelector<HTMLElement>('.visuals-card__title');
+    if (!img) return;
+
+    lbImg.src = img.src;
+    lbImg.alt = img.alt;
+    lbTitle.textContent = title?.textContent || '';
+    lb.classList.add('is-open');
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  });
+
+  function closeLb() {
+    lb.classList.remove('is-open');
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  lb.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.visuals-lightbox__image')) return;
+    closeLb();
+  });
+
+  document.getElementById('vlb-close')!.addEventListener('click', closeLb);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lb.classList.contains('is-open')) closeLb();
+  });
+</script>

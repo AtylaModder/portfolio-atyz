@@ -1,0 +1,218 @@
+---
+import { contactInfo, socialLinks } from '../data/site';
+---
+
+<section id="contact" class="contact-hub section-anchor">
+  <!-- Animated background -->
+  <div class="contact-hub__bg" aria-hidden="true">
+    <div class="contact-hub__orb contact-hub__orb--1"><span class="contact-hub__orb-core"></span></div>
+    <div class="contact-hub__orb contact-hub__orb--2"><span class="contact-hub__orb-core"></span></div>
+    <div class="contact-hub__orb contact-hub__orb--3"><span class="contact-hub__orb-core"></span></div>
+  </div>
+
+  <div class="container-shell">
+    <!-- Header -->
+    <div class="contact-hub__header reveal-up">
+      <span class="section-eyebrow">Contato</span>
+      <h2 class="contact-hub__title">
+        Vamos criar algo<br/>
+        <span class="contact-hub__title-accent">incrível juntos?</span>
+      </h2>
+      <div class="contact-hub__divider">
+        <span class="contact-hub__divider-dot"></span>
+      </div>
+    </div>
+
+    <!-- Contact cards row -->
+    <div class="contact-cards reveal-stagger reveal-up">
+      <a href={`mailto:${contactInfo.email}`} class="contact-card" data-contact-card>
+        <div class="contact-card__glow"></div>
+        <div class="contact-card__icon">
+          <i class="hn hn-message-solid"></i>
+        </div>
+        <p class="contact-card__label">Email</p>
+        <p class="contact-card__value">{contactInfo.email}</p>
+        <span class="contact-card__action">Enviar email <i class="hn hn-arrow-right-solid"></i></span>
+      </a>
+
+      <a href={`tel:${contactInfo.phone.replace(/[\s()-]/g, '')}`} class="contact-card" data-contact-card>
+        <div class="contact-card__glow"></div>
+        <div class="contact-card__icon">
+          <i class="hn hn-phone-ringing-high-solid"></i>
+        </div>
+        <p class="contact-card__label">Telefone</p>
+        <p class="contact-card__value">{contactInfo.phone}</p>
+        <span class="contact-card__action">Ligar agora <i class="hn hn-arrow-right-solid"></i></span>
+      </a>
+
+      <div class="contact-card" data-contact-card>
+        <div class="contact-card__glow"></div>
+        <div class="contact-card__icon">
+          <i class="hn hn-location-pin-solid"></i>
+        </div>
+        <p class="contact-card__label">Localização</p>
+        <p class="contact-card__value">{contactInfo.location}</p>
+        <span class="contact-card__action">Remoto & Presencial</span>
+      </div>
+    </div>
+
+    <!-- Main content: form + social sidebar -->
+    <div class="contact-hub__body">
+      <!-- Form -->
+      <div class="contact-hub__form-wrapper reveal-left" data-contact-form>
+        <div class="contact-hub__form-header">
+          <h3 class="contact-hub__form-title">Envie sua mensagem</h3>
+          <p class="contact-hub__form-subtitle">Respondo em até 24 horas</p>
+        </div>
+        <form class="contact-hub__form" aria-label="Formulário de contato">
+          <div class="contact-hub__form-row">
+            <div class="contact-hub__field">
+              <input type="text" name="name" id="contact-name" required placeholder=" " />
+              <label for="contact-name">Seu nome</label>
+              <div class="contact-hub__field-line"></div>
+            </div>
+            <div class="contact-hub__field">
+              <input type="email" name="email" id="contact-email" required placeholder=" " />
+              <label for="contact-email">Seu email</label>
+              <div class="contact-hub__field-line"></div>
+            </div>
+          </div>
+          <div class="contact-hub__field">
+            <input type="text" name="subject" id="contact-subject" placeholder=" " />
+            <label for="contact-subject">Assunto</label>
+            <div class="contact-hub__field-line"></div>
+          </div>
+          <div class="contact-hub__field">
+            <textarea name="message" id="contact-message" rows="5" required placeholder=" "></textarea>
+            <label for="contact-message">Conte sobre seu projeto...</label>
+            <div class="contact-hub__field-line"></div>
+          </div>
+          <button type="submit" class="contact-hub__submit">
+            <span class="contact-hub__submit-text">Enviar mensagem</span>
+            <span class="contact-hub__submit-icon"><i class="hn hn-arrow-right-solid"></i></span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Social sidebar -->
+      <div class="contact-hub__social reveal-right" data-contact-social>
+        <p class="contact-hub__social-label">Redes Sociais</p>
+        <div class="contact-hub__social-links">
+          {socialLinks.map((link) => (
+            <a href={link.url} class="contact-hub__social-btn" aria-label={link.label} target="_blank" rel="noopener noreferrer">
+              <span class="contact-hub__social-icon">
+                {link.icon === 'instagram' && <i class="hn hn-instagram"></i>}
+                {link.icon === 'linkedin' && <i class="hn hn-linkedin"></i>}
+                {link.icon === 'behance' && <i class="hn hn-behance"></i>}
+                {link.icon === 'github' && <i class="hn hn-github"></i>}
+              </span>
+              <span class="contact-hub__social-name">{link.label}</span>
+              <span class="contact-hub__social-arrow"><i class="hn hn-arrow-right-solid"></i></span>
+            </a>
+          ))}
+        </div>
+        <div class="contact-hub__availability">
+          <span class="contact-hub__status-dot"></span>
+          Disponível para novos projetos
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const initContactHub = () => {
+    const hub = document.querySelector<HTMLElement>('.contact-hub');
+    if (!hub || hub.dataset.enhanced === 'true') return;
+
+    hub.dataset.enhanced = 'true';
+
+    const header = hub.querySelector('.contact-hub__header');
+    if (header) {
+      gsap.from(header.children, {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: header, start: 'top 85%' },
+      });
+    }
+
+    const cards = hub.querySelectorAll('[data-contact-card]');
+    if (cards.length) {
+      gsap.from(cards, {
+        y: 34,
+        duration: 0.7,
+        stagger: 0.12,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: cards[0], start: 'top 85%', once: true },
+      });
+    }
+
+    const form = hub.querySelector('[data-contact-form]');
+    if (form) {
+      gsap.from(form, {
+        x: -40,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: form, start: 'top 80%' },
+      });
+    }
+
+    const social = hub.querySelector('[data-contact-social]');
+    if (social) {
+      gsap.from(social, {
+        x: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: social, start: 'top 80%' },
+      });
+    }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const orbs = Array.from(hub.querySelectorAll<HTMLElement>('.contact-hub__orb'));
+    if (!orbs.length) return;
+
+    const orbSetters = orbs.map((orb, index) => ({
+      xTo: gsap.quickTo(orb, 'x', { duration: 0.9, ease: 'power3.out' }),
+      yTo: gsap.quickTo(orb, 'y', { duration: 0.9, ease: 'power3.out' }),
+      strength: 18 + index * 12,
+    }));
+
+    const resetParallax = () => {
+      orbSetters.forEach(({ xTo, yTo }) => {
+        xTo(0);
+        yTo(0);
+      });
+    };
+
+    const handlePointerMove = (ev: PointerEvent) => {
+      const rect = hub.getBoundingClientRect();
+      const x = ((ev.clientX - rect.left) / rect.width - 0.5) * 2;
+      const y = ((ev.clientY - rect.top) / rect.height - 0.5) * 2;
+
+      orbSetters.forEach(({ xTo, yTo, strength }) => {
+        xTo(x * strength);
+        yTo(y * strength);
+      });
+    };
+
+    hub.addEventListener('pointermove', handlePointerMove);
+    hub.addEventListener('pointerleave', resetParallax);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactHub, { once: true });
+  } else {
+    initContactHub();
+  }
+</script>

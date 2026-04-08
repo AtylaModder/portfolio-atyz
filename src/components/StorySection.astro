@@ -1,0 +1,37 @@
+---
+import PlaceholderFrame from './PlaceholderFrame.astro';
+import { storyParagraphs, skills } from '../data/site';
+---
+
+<section id="about" class="story section-anchor">
+  <div class="story__bg" aria-hidden="true"></div>
+
+  <div class="container-shell story__content">
+    <div class="story__left reveal-left">
+      <span class="eyebrow">Sobre mim</span>
+      <h2 class="display-title story__title">
+        Conheça a jornada por trás<br/>dos projetos<span class="text-gradient">.</span>
+      </h2>
+
+      <div class="story__photo">
+        <PlaceholderFrame
+          label="Foto, retrato ou render principal"
+          note="Envie uma imagem que represente a identidade do portfólio."
+          aspect="portrait"
+        />
+      </div>
+    </div>
+
+    <div class="story__right reveal-up">
+      {storyParagraphs.map((paragraph, i) => (
+        <p class="story__paragraph" data-story-index={i}>{paragraph}</p>
+      ))}
+
+      <div class="story__skills reveal-up" data-delay="0.2">
+        {skills.map((skill) => (
+          <span class="skill-tag">{skill}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,202 @@
+---
+import { navigation, socialLinks } from '../data/site';
+
+const year = new Date().getFullYear();
+
+const iconMap: Record<string, string> = {
+  instagram: 'hn-instagram',
+  linkedin: 'hn-linkedin',
+  behance: 'hn-behance',
+  github: 'hn-github',
+};
+---
+
+<!-- Hidden canvas for generating dissolve mask -->
+<canvas class="footer__mask-canvas" id="pixel-dissolve-mask" aria-hidden="true"></canvas>
+
+<footer class="footer" id="site-footer">
+  <!-- Floating shapes -->
+  <div class="footer__shape footer__shape--diamond" aria-hidden="true"></div>
+  <div class="footer__shape footer__shape--ring" aria-hidden="true"></div>
+
+  <div class="container-shell">
+    <div class="footer__top reveal-up">
+      <div class="footer__about">
+        <div class="footer__logo">
+          <div class="footer__mark" aria-hidden="true"></div>
+          <span class="footer__brand">Atyz Modder</span>
+        </div>
+        <p class="footer__desc">
+          Portfolio focado em direção visual, texturas, modelagem 3D e identidade de add-ons para Minecraft Bedrock.
+        </p>
+        <div class="footer__social" style="margin-top: 1.25rem;">
+          {socialLinks.map((link) => (
+            <a href={link.url} class="footer__social-link" aria-label={link.label}>
+              <i class={`hn ${iconMap[link.icon] || 'hn-globe-solid'}`}></i>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p class="footer__col-title">Navegação</p>
+        <nav aria-label="Links rápidos" class="footer__nav">
+          {navigation.map((item) => (
+            <a href={item.href}>{item.label}</a>
+          ))}
+        </nav>
+      </div>
+
+      <div>
+        <p class="footer__col-title">Contato</p>
+        <nav class="footer__nav">
+          <a href="mailto:contact.atylamodder@gmail.com">
+            <i class="hn hn-message-solid"></i> Email
+          </a>
+          <a href="tel:+5538998694156">
+            <i class="hn hn-phone-ringing-high-solid"></i> Telefone
+          </a>
+          <span style="color: var(--color-muted); font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="hn hn-location-pin-solid"></i> Brazil
+          </span>
+        </nav>
+      </div>
+    </div>
+
+    <div class="footer__bottom reveal-up" data-delay="0.15">
+      <p>&copy; {year} Atyla Smith / Atyz. Todos os direitos reservados.</p>
+      <div class="footer__bottom-links">
+        <a href="#about">Sobre</a>
+        <a href="#projects">Projetos</a>
+        <a href="#contact">Contato</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const footer = document.getElementById('site-footer');
+  const cvs = document.getElementById('pixel-dissolve-mask') as HTMLCanvasElement | null;
+
+  if (footer && cvs) {
+    const ctx = cvs.getContext('2d')!;
+
+    /* pixels that float away from the dissolve edge */
+    const MAX_P = 55;
+    type P = { x:number; y:number; vx:number; vy:number; life:number; decay:number; sz:number };
+    let w = 0, h = 0, maskH = 0, cols = 0, rows = 0, px = 10;
+    let grid: number[][] = [];
+    let parts: P[] = [];
+    let raf = 0, on = false, t = 0;
+
+    const hash = (x: number, y: number) => {
+      let v = ((x * 374761393 + y * 668265263) >>> 0);
+      v = ((v ^ (v >> 13)) * 1274126177) >>> 0;
+      return (v & 0x7fffffff) / 0x7fffffff;
+    };
+
+    function setup() {
+      const rect = footer!.getBoundingClientRect();
+      w = Math.round(rect.width);
+      h = Math.round(rect.height);
+      maskH = 200;                          /* dissolve zone height */
+      cvs!.width  = w;
+      cvs!.height = h;
+      px = w < 600 ? 7 : w < 1024 ? 10 : 12;
+      cols = Math.ceil(w / px);
+      rows = Math.ceil(maskH / px);
+      grid = [];
+
+      for (let ry = 0; ry < rows; ry++) {
+        grid[ry] = [];
+        const pct = ry / Math.max(rows - 1, 1); /* 0=top(sparse) 1=bottom(solid) */
+
+        if (pct >= 0.82) {
+          for (let c = 0; c < cols; c++) grid[ry][c] = 1;
+          continue;
+        }
+        const density = Math.pow(pct, 1.8);
+        for (let c = 0; c < cols; c++) grid[ry][c] = hash(c, ry) < density ? 1 : 0;
+      }
+      applyMask();
+    }
+
+    function spawn() {
+      if (parts.length >= MAX_P) return;
+      const ry = Math.floor(rows * 0.08 + Math.random() * rows * 0.45);
+      const cx = Math.floor(Math.random() * cols);
+      parts.push({
+        x: cx * px,
+        y: ry * px,
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: -(0.3 + Math.random() * 1.0),
+        life: 1,
+        decay: 0.006 + Math.random() * 0.012,
+        sz: px * (0.45 + Math.random() * 0.55),
+      });
+    }
+
+    function applyMask() {
+      const url = cvs!.toDataURL();
+      footer!.style.maskImage = `url(${url})`;
+      footer!.style.webkitMaskImage = `url(${url})`;
+    }
+
+    function frame() {
+      t++;
+      ctx.clearRect(0, 0, w, h);
+      (ctx as any).imageSmoothingEnabled = false;
+
+      /* ── dissolve zone (top 200px): pixelated alpha mask ── */
+      for (let ry = 0; ry < rows; ry++) {
+        const pct = ry / Math.max(rows - 1, 1);
+        for (let cx = 0; cx < cols; cx++) {
+          if (!grid[ry][cx]) continue;
+          let a = 1;
+          if (pct < 0.55) {
+            a = Math.sin(t * 0.03 + hash(cx, ry) * 6.2832) * 0.15 + 0.85;
+          }
+          ctx.fillStyle = `rgba(255,255,255,${a})`;
+          ctx.fillRect(cx * px, ry * px, px, px);
+        }
+      }
+
+      /* ── floating particles (detaching pixels) ── */
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy *= 0.997;
+        p.life -= p.decay;
+        if (p.life <= 0) { parts.splice(i, 1); continue; }
+        ctx.fillStyle = `rgba(255,255,255,${p.life * p.life})`;
+        ctx.fillRect(
+          Math.round(p.x / px) * px,
+          Math.round(p.y / px) * px,
+          Math.round(p.sz),
+          Math.round(p.sz),
+        );
+      }
+
+      /* ── rest of footer (below dissolve zone): fully visible ── */
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, maskH, w, h - maskH);
+
+      /* spawn cadence */
+      if (Math.random() < 0.05) spawn();
+      if (t % 80 === 0) { for (let i = 0; i < 4; i++) spawn(); }
+
+      applyMask();
+      if (on) raf = requestAnimationFrame(frame);
+    }
+
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !on)  { on = true; frame(); }
+      else if (!e.isIntersecting && on) { on = false; cancelAnimationFrame(raf); }
+    }, { threshold: 0.01 });
+
+    setup();
+    obs.observe(footer);
+    window.addEventListener('resize', setup);
+  }
+</script>

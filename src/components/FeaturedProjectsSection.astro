@@ -1,0 +1,122 @@
+---
+import { projects } from '../data/site';
+---
+
+<section id="projects" class="projects-section section-anchor">
+  <!-- Atmospheric BG -->
+  <div class="projects-section__bg">
+    <div class="projects-section__orb projects-section__orb--1"></div>
+    <div class="projects-section__orb projects-section__orb--2"></div>
+    <div class="projects-section__shape projects-section__shape--diamond"></div>
+    <div class="projects-section__shape projects-section__shape--ring"></div>
+  </div>
+
+  <div class="container-shell" style="position:relative;z-index:1;">
+    <div class="projects-section__heading reveal-up">
+      <span class="section-eyebrow">Projetos</span>
+      <h2 class="section-title">Projetos em <span class="projects-title-accent">Destaque</span></h2>
+      <p class="section-subtitle">Uma seleção dos trabalhos mais recentes e impactantes.</p>
+      <div class="projects-section__divider">
+        <span class="projects-section__divider-dot"></span>
+      </div>
+    </div>
+
+    <div class="projects-grid reveal-stagger reveal-scale">
+      {projects.map((project, index) => (
+        <a
+          href={project.link}
+          target={project.link.startsWith('http') ? '_blank' : undefined}
+          rel={project.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+          class:list={[
+            'project-card',
+            `project-card--${project.accent}`,
+          ]}
+          data-project-index={index}
+          style={`--project-delay: ${index * 0.12}s`}
+        >
+          <div class="project-card__image-wrap">
+            <img
+              src={project.image}
+              alt={project.title}
+              class="project-card__image"
+              loading="lazy"
+              decoding="async"
+            />
+            <div class="project-card__image-overlay"></div>
+            <div class="project-card__shine"></div>
+          </div>
+
+          <div class="project-card__content">
+            <div class="project-card__top">
+              <span class="project-card__number">{String(index + 1).padStart(2, '0')}</span>
+              <span class="project-card__role">{project.role}</span>
+            </div>
+
+            <h3 class="project-card__title">{project.title}</h3>
+            <p class="project-card__desc">{project.description}</p>
+
+            <div class="project-card__footer">
+              <div class="project-card__tags">
+                {project.tags.map((tag) => (
+                  <span class="project-card__tag">{tag}</span>
+                ))}
+              </div>
+              <span class="project-card__arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7"/>
+                  <polyline points="7 7 17 7 17 17"/>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="project-card__glow"></div>
+          <div class="project-card__border"></div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  function initProjectsReveal() {
+    const cards = document.querySelectorAll<HTMLElement>('.project-card');
+    if (!cards.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    cards.forEach((card) => observer.observe(card));
+
+    // Tilt effect on mousemove
+    cards.forEach((card) => {
+      card.addEventListener('mousemove', (e: MouseEvent) => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+        card.style.setProperty('--tilt-x', `${y * -4}deg`);
+        card.style.setProperty('--tilt-y', `${x * 6}deg`);
+        card.style.setProperty('--shine-x', `${(e.clientX - rect.left) / rect.width * 100}%`);
+        card.style.setProperty('--shine-y', `${(e.clientY - rect.top) / rect.height * 100}%`);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.setProperty('--tilt-x', '0deg');
+        card.style.setProperty('--tilt-y', '0deg');
+      });
+    });
+  }
+
+  // Run on initial load & Astro page transitions
+  initProjectsReveal();
+  document.addEventListener('astro:page-load', initProjectsReveal);
+</script>

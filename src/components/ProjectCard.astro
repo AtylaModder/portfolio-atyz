@@ -1,0 +1,51 @@
+---
+import PlaceholderFrame from './PlaceholderFrame.astro';
+
+interface Project {
+  title: string;
+  role: string;
+  description: string;
+  tags: readonly string[];
+  accent: 'amber' | 'coral' | 'violet' | 'cyan';
+  placeholderLabel: string;
+}
+
+interface Props {
+  project: Project;
+  index: number;
+  reverse?: boolean;
+}
+
+const { project, index, reverse = false } = Astro.props;
+---
+
+<article class:list={['glass-panel project-row overflow-hidden p-5 sm:p-6 lg:p-7', reverse && 'project-row--reverse']} data-reveal>
+  <div class:list={[
+    'project-media rounded-[1.5rem] p-3 sm:p-4',
+    project.accent === 'amber' && 'project-accent--amber',
+    project.accent === 'coral' && 'project-accent--coral',
+    project.accent === 'cyan' && 'project-accent--cyan',
+    project.accent === 'violet' && 'project-accent--violet',
+  ]}>
+    <PlaceholderFrame label={project.placeholderLabel} note="Troque por key art, screenshot ou render final do case." />
+  </div>
+
+  <div class="project-copy relative z-10 flex h-full flex-col justify-center">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">Projeto {String(index + 1).padStart(2, '0')}</p>
+        <h3 class="display-title mt-3 text-3xl font-semibold text-white sm:text-[2.4rem]">{project.title}</h3>
+        <p class="mt-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">{project.role}</p>
+      </div>
+      <span class="pill text-xs">Case</span>
+    </div>
+
+    <p class="muted mt-5 flex-1 text-sm leading-8 sm:text-base">{project.description}</p>
+
+    <div class="mt-6 flex flex-wrap gap-2">
+      {project.tags.map((tag) => (
+        <span class="pill text-xs">{tag}</span>
+      ))}
+    </div>
+  </div>
+</article>

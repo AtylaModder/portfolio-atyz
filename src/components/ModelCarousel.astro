@@ -1,0 +1,324 @@
+---
+import { modelCategories } from '../data/site';
+---
+
+<section id="models" class="models-section section-anchor">
+  <!-- Atmospheric background -->
+  <div class="models-section__bg" aria-hidden="true">
+    <div class="models-section__orb models-section__orb--1"></div>
+    <div class="models-section__orb models-section__orb--2"></div>
+    <div class="models-section__shape models-section__shape--diamond"></div>
+    <div class="models-section__shape models-section__shape--ring"></div>
+  </div>
+
+  <div class="container-shell">
+    <div class="models-section__header reveal-up">
+      <div>
+        <span class="section-eyebrow">Modelos</span>
+        <h2 class="section-title">Modelos</h2>
+        <p class="section-subtitle">Uma amostra dos modelos e trabalhos criados para diversos projetos.</p>
+      </div>
+      <div class="models-section__filters">
+        {modelCategories.map((cat, i) => (
+          <button class:list={['model-filter', i === 0 && 'active']} data-category={cat.toLowerCase()}>
+            {cat}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-bleed carousel (outside container for edge-to-edge) -->
+  <div class="models-carousel-wrap" id="models-wrap">
+    <div class="models-track" id="models-track"></div>
+  </div>
+</section>
+
+<!-- Lightboxes — outside section to avoid stacking context isolation -->
+
+<!-- Lightbox — Image -->
+<div class="model-lightbox" id="model-lightbox" aria-hidden="true">
+  <div class="model-lightbox__backdrop"></div>
+  <div class="model-lightbox__body">
+    <button class="model-lightbox__close" id="lb-close" aria-label="Fechar"></button>
+    <img class="model-lightbox__image" id="lb-img" alt="" />
+    <p class="model-lightbox__title" id="lb-title"></p>
+    <p class="model-lightbox__badge" id="lb-badge"></p>
+  </div>
+</div>
+
+<!-- Lightbox — 3D Viewer -->
+<div class="model-lightbox model-lightbox--3d" id="model-lightbox-3d" aria-hidden="true">
+  <div class="model-lightbox__backdrop"></div>
+  <div class="model-lightbox-3d__body">
+    <button class="model-lightbox__close" id="lb3d-close" aria-label="Fechar"></button>
+    <canvas class="model-lightbox-3d__canvas" id="lb3d-canvas"></canvas>
+    <div class="model-lightbox-3d__info">
+      <p class="model-lightbox-3d__title" id="lb3d-title"></p>
+      <p class="model-lightbox-3d__hint">Arraste para girar · Botão direito para mover · Scroll para zoom</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { models } from '../data/site';
+  import { createModelViewer, type ModelViewer } from '../lib/bedrock-renderer';
+
+  /* ── DOM refs ──────────────────────────────────── */
+  const wrap   = document.getElementById('models-wrap')!;
+  const track  = document.getElementById('models-track')!;
+  const lb     = document.getElementById('model-lightbox')!;
+  const lbImg  = document.getElementById('lb-img') as HTMLImageElement;
+  const lbTitle = document.getElementById('lb-title')!;
+  const lbBadge = document.getElementById('lb-badge')!;
+
+  // 3D lightbox
+  const lb3d      = document.getElementById('model-lightbox-3d')!;
+  const lb3dCanvas = document.getElementById('lb3d-canvas') as HTMLCanvasElement;
+  const lb3dTitle  = document.getElementById('lb3d-title')!;
+
+  /* ── State ─────────────────────────────────────── */
+  let pos = 0;
+  let setW = 0;
+  let speed = 0.45;
+  let isVisible = false;
+  let isHover = false;
+  let isDrag = false;
+  let isPaused = false;
+  let dragStartX = 0;
+  let dragOrigin = 0;
+  let velocity = 0;
+  let lastPtrX = 0;
+  let clickOk = true;
+  let resumeTimer = 0;
+  let activeFilter = 'all';
+  let filteredCount = 0;
+  let activeViewer: ModelViewer | null = null;
+
+  /* ── Card HTML builder ───────────────────────────── */
+  function cardMarkup(m: typeof models[number]): string {
+    const has3d = 'model3d' in m && (m as any).model3d;
+    const cam = 'camera' in m ? (m as any).camera : null;
+    const camAttr = cam ? ` data-cam="${cam.angle},${cam.height},${cam.zoom},${cam.lookX},${cam.lookY},${cam.ortho ? 1 : 0}"` : '';
+    return `<div class="model-card" data-cat="${m.category}" data-src="${m.image}" data-title="${m.title}"${has3d ? ` data-model3d="${(m as any).model3d}"` : ''}${camAttr}>
+      <div class="model-card__inner">
+        <img src="${m.image}" alt="${m.title}" loading="lazy" draggable="false" />
+        <div class="model-card__shine"></div>
+        <div class="model-card__border"></div>
+        ${has3d ? '<span class="model-card__3d-badge">3D</span>' : ''}
+      </div>
+    </div>`;
+  }
+
+  /* ── Build / rebuild the track ─────────────────── */
+  function build() {
+    const list = activeFilter === 'all'
+      ? [...models]
+      : models.filter(m => m.category === activeFilter);
+
+    filteredCount = list.length;
+    if (filteredCount === 0) { track.innerHTML = ''; setW = 0; return; }
+
+    const approxCard = 380;
+    const setsNeeded = Math.max(Math.ceil((wrap.clientWidth * 3) / (filteredCount * approxCard)) + 1, 5);
+
+    let html = '';
+    for (let s = 0; s < setsNeeded; s++) {
+      list.forEach(m => { html += cardMarkup(m); });
+    }
+    track.innerHTML = html;
+
+    requestAnimationFrame(() => {
+      const cards = track.querySelectorAll('.model-card');
+      if (cards.length > filteredCount) {
+        setW = (cards[filteredCount] as HTMLElement).offsetLeft - (cards[0] as HTMLElement).offsetLeft;
+      }
+    });
+
+    pos = 0;
+  }
+
+  /* ── Animation loop ────────────────────────────── */
+  function tick() {
+    if (isVisible && !isHover && !isDrag && !isPaused && setW > 0) {
+      pos -= speed;
+    }
+
+    if (!isDrag && Math.abs(velocity) > 0.15) {
+      pos += velocity;
+      velocity *= 0.935;
+    } else if (!isDrag) {
+      velocity = 0;
+    }
+
+    if (setW > 0) {
+      while (pos <= -setW) pos += setW;
+      while (pos > 0) pos -= setW;
+    }
+
+    track.style.transform = `translate3d(${pos}px,0,0)`;
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Visibility observer ───────────────────────── */
+  const obs = new IntersectionObserver(([e]) => { isVisible = e.isIntersecting; }, { threshold: 0.08 });
+  obs.observe(wrap);
+
+  /* ── Hover ─────────────────────────────────────── */
+  wrap.addEventListener('pointerenter', () => { isHover = true; });
+  wrap.addEventListener('pointerleave', () => { isHover = false; isDrag = false; });
+
+  /* ── Drag ──────────────────────────────────────── */
+  function onDragMove(e: PointerEvent) {
+    if (!isDrag) return;
+    const diff = e.clientX - dragStartX;
+    if (Math.abs(diff) > 4) clickOk = false;
+    pos = dragOrigin + diff;
+    velocity = (e.clientX - lastPtrX) * 0.45;
+    lastPtrX = e.clientX;
+  }
+
+  function onDragEnd() {
+    isDrag = false;
+    document.removeEventListener('pointermove', onDragMove);
+    document.removeEventListener('pointerup', onDragEnd);
+    clearTimeout(resumeTimer);
+    isPaused = true;
+    resumeTimer = window.setTimeout(() => { isPaused = false; }, 1800);
+  }
+
+  wrap.addEventListener('pointerdown', (e) => {
+    isDrag = true;
+    clickOk = true;
+    dragStartX = e.clientX;
+    dragOrigin = pos;
+    lastPtrX = e.clientX;
+    velocity = 0;
+    clearTimeout(resumeTimer);
+    isPaused = false;
+    document.addEventListener('pointermove', onDragMove);
+    document.addEventListener('pointerup', onDragEnd, { once: true });
+  });
+
+  wrap.addEventListener('dragstart', (e) => e.preventDefault());
+
+  /* ── Category filters ──────────────────────────── */
+  document.querySelectorAll('.model-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.model-filter').forEach(f => f.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = (btn as HTMLElement).dataset.category || 'all';
+
+      track.style.opacity = '0';
+      track.style.transition = 'opacity 0.22s ease';
+      setTimeout(() => {
+        build();
+        track.style.opacity = '1';
+      }, 220);
+    });
+  });
+
+  /* ── Lightbox ──────────────────────────────────── */
+  track.addEventListener('click', (e) => {
+    if (!clickOk) return;
+    const card = (e.target as HTMLElement).closest('.model-card') as HTMLElement | null;
+    if (!card) return;
+
+    const modelUrl = card.dataset.model3d;
+    const title = card.dataset.title || '';
+
+    // If model has 3D data, open the 3D viewer
+    if (modelUrl) {
+      const camRaw = card.dataset.cam || '';
+      open3DLightbox(modelUrl, title, camRaw);
+      return;
+    }
+
+    // Otherwise open image lightbox
+    const src = card.dataset.src;
+    if (!src) return;
+    lbImg.src = src;
+    lbImg.alt = title;
+    lbTitle.textContent = title;
+    lbBadge.textContent = (card.dataset.cat || '').toUpperCase();
+    lb.classList.add('is-open');
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  });
+
+  async function open3DLightbox(modelUrl: string, title: string, camRaw: string) {
+    lb3dTitle.textContent = title;
+    lb3d.classList.add('is-open');
+    lb3d.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // Small delay for CSS transition to apply dimensions
+    await new Promise(r => setTimeout(r, 50));
+
+    // Parse per-model camera: "angle,height,zoom,lookX,lookY,ortho"
+    let camera: { angle: number; height: number; zoom: number; lookX: number; lookY: number; ortho: boolean } | undefined;
+    if (camRaw) {
+      const [a, h, z, lx, ly, o] = camRaw.split(',').map(Number);
+      camera = { angle: a, height: h, zoom: z, lookX: lx, lookY: ly, ortho: !!o };
+    }
+
+    activeViewer = await createModelViewer({
+      canvas: lb3dCanvas,
+      modelUrl,
+      interactive: true,
+      camera,
+    });
+    activeViewer.resize();
+  }
+
+  function closeLb() {
+    lb.classList.remove('is-open');
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function close3DLb() {
+    lb3d.classList.remove('is-open');
+    lb3d.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    if (activeViewer) {
+      activeViewer.dispose();
+      activeViewer = null;
+    }
+  }
+
+  lb.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.model-lightbox__image')) return;
+    closeLb();
+  });
+
+  lb3d.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.model-lightbox-3d__canvas') || target.closest('.model-lightbox-3d__info')) return;
+    close3DLb();
+  });
+
+  document.getElementById('lb3d-close')!.addEventListener('click', close3DLb);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeLb();
+      close3DLb();
+    }
+  });
+
+  // Handle window resize for 3D viewer
+  window.addEventListener('resize', () => {
+    activeViewer?.resize();
+  });
+
+  /* ── Init ──────────────────────────────────────── */
+  build();
+  requestAnimationFrame(tick);
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(build, 300);
+  });
+</script>
