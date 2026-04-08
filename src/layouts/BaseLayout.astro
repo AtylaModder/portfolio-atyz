@@ -59,6 +59,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initRevealAnimations } from '../scripts/animations';
       import { initMicrointeractions } from '../scripts/microinteractions';
       import { initCustomCursor } from '../scripts/custom-cursor';
+      import { initHeroParticles } from '../scripts/hero-particles';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -185,6 +186,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
                 initRevealAnimations();
                 initMicrointeractions();
                 initCustomCursor();
+                initHeroParticles();
               },
             });
           });
@@ -196,6 +198,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
           initRevealAnimations();
           initMicrointeractions();
           initCustomCursor();
+          initHeroParticles();
         }
       });
 
