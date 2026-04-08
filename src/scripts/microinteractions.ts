@@ -107,8 +107,10 @@ function initCardTilt() {
    PUBLIC INIT
    ══════════════════════════════════════════════ */
 export function initMicrointeractions() {
-  /* Skip all JS-driven hover effects on touch — they feel weird */
+  /* Skip all JS-driven hover effects on touch — no cursor to hover with */
   if (isTouchDevice()) return;
+  /* Skip on reduced-motion preference */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   initMagneticButtons();
   initCardTilt();

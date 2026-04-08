@@ -167,10 +167,16 @@ import { contactInfo, socialLinks } from '../data/site';
     const orbs = Array.from(hub.querySelectorAll<HTMLElement>('.contact-hub__orb'));
     if (!orbs.length) return;
 
+    /* Scale orb parallax strength by perf tier (40% on mobile, 0 on reduced-motion) */
+    const perfTier = (window as any).__perfTier;
+    const pScale = perfTier
+      ? (perfTier.isReducedMotion ? 0 : perfTier.isMobile ? 0.4 : 1)
+      : 1;
+
     const orbSetters = orbs.map((orb, index) => ({
       xTo: gsap.quickTo(orb, 'x', { duration: 0.9, ease: 'power3.out' }),
       yTo: gsap.quickTo(orb, 'y', { duration: 0.9, ease: 'power3.out' }),
-      strength: 18 + index * 12,
+      strength: (18 + index * 12) * pScale,
     }));
 
     const resetParallax = () => {

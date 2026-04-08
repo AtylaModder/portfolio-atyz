@@ -264,6 +264,14 @@ export function initGeoBackground() {
   let targetMX = 0.5;
   let targetMY = 0.5;
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  /* Scale mouse parallax based on perf tier (0.4× on mobile, 0× on reduced-motion) */
+  const perfTier = (window as any).__perfTier;
+  const parallaxMul = perfTier
+    ? (perfTier.isReducedMotion ? 0 : perfTier.isMobile ? 0.4 : 1)
+    : 1;
+  const mouseOffset = 24 * parallaxMul;
+
   if (!isTouchDevice) {
     window.addEventListener('mousemove', (e) => {
       targetMX = e.clientX / W;
@@ -285,8 +293,8 @@ export function initGeoBackground() {
       const dy = Math.cos(drift * 0.7) * sh.driftAmpY;
 
       /* Mouse parallax */
-      const mxOff = (mouseX - 0.5) * 24 * sh.mouseScale;
-      const myOff = (mouseY - 0.5) * 24 * sh.mouseScale;
+      const mxOff = (mouseX - 0.5) * mouseOffset * sh.mouseScale;
+      const myOff = (mouseY - 0.5) * mouseOffset * sh.mouseScale;
 
       const x = sh.baseX * W + dx + mxOff;
       const y = sh.baseY * H + dy + myOff;

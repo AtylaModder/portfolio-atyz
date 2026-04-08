@@ -14,6 +14,9 @@ const isTouchOnly = () =>
   'ontouchstart' in window && navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches;
 
 function getCount(): number {
+  /* Skip entirely on low-end devices */
+  const perfTier = (window as any).__perfTier;
+  if (perfTier?.isLowEnd) return 0;
   if (isTouchOnly()) return 0;          // disable on touch-only
   if (window.innerWidth < 768) return 15;
   return 35;

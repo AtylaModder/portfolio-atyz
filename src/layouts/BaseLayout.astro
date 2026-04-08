@@ -45,6 +45,22 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     <ClientRouter />
+    <script is:inline>
+    (function(){
+      var h=document.documentElement;
+      var t=window.matchMedia('(pointer: coarse)').matches;
+      var r=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var c=navigator.hardwareConcurrency||4;
+      var l=c<4;
+      var s=typeof CSS!=='undefined'&&CSS.supports&&CSS.supports('backdrop-filter','blur(1px)');
+      var nb=!s||(l&&t);
+      if(t)h.classList.add('perf-touch');
+      if(r)h.classList.add('perf-reduced-motion');
+      if(l)h.classList.add('perf-low-end');
+      if(nb)h.classList.add('perf-no-backdrop');
+      window.__perfTier={isTouch:t,isReducedMotion:r,isLowEnd:l,noBackdrop:nb,isMobile:t||window.innerWidth<768};
+    })();
+    </script>
   </head>
   <body class="is-loading">
     <div id="geo-bg" aria-hidden="true" transition:persist transition:name="geo-bg">
@@ -60,6 +76,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initMicrointeractions } from '../scripts/microinteractions';
       import { initCustomCursor } from '../scripts/custom-cursor';
       import { initHeroParticles } from '../scripts/hero-particles';
+      import { getPerfTier, getParallaxScale, monitorFrameRate } from '../scripts/perf-tier';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -181,24 +198,28 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
                 loader.style.display = 'none';
                 document.body.classList.remove('is-loading');
                 if (pageWrap) pageWrap.style.opacity = '1';
+                const tier = getPerfTier();
                 animateHero();
                 setupScrollAnimations();
                 initRevealAnimations();
-                initMicrointeractions();
-                initCustomCursor();
-                initHeroParticles();
+                if (!tier.isReducedMotion) initMicrointeractions();
+                if (!tier.isTouch) initCustomCursor();
+                if (!tier.isLowEnd) initHeroParticles();
+                monitorFrameRate();
               },
             });
           });
         } else {
+          const tier = getPerfTier();
           document.body.classList.remove('is-loading');
           if (pageWrap) pageWrap.style.opacity = '1';
           animateHero();
           setupScrollAnimations();
           initRevealAnimations();
-          initMicrointeractions();
-          initCustomCursor();
-          initHeroParticles();
+          if (!tier.isReducedMotion) initMicrointeractions();
+          if (!tier.isTouch) initCustomCursor();
+          if (!tier.isLowEnd) initHeroParticles();
+          monitorFrameRate();
         }
       });
 
@@ -215,9 +236,12 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
 
       /* ── All Scroll-Driven Animations ──────────── */
       function setupScrollAnimations() {
+        const pScale = getParallaxScale();
+
         /* Parallax shapes in hero */
         document.querySelectorAll('[data-parallax]').forEach((el) => {
-          const speed = parseFloat((el as HTMLElement).dataset.parallax || '0.5');
+          const speed = parseFloat((el as HTMLElement).dataset.parallax || '0.5') * pScale;
+          if (speed === 0) return; // reduced-motion — skip entirely
           gsap.to(el, {
             y: () => window.innerHeight * speed * -0.4,
             scrollTrigger: {
