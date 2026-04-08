@@ -168,7 +168,7 @@ button, input, textarea { font: inherit; }
   background: var(--gradient-gold);
   transform: rotate(45deg);
   position: relative;
-  animation: loader-diamond-pulse 2s ease-in-out infinite;
+  animation: loader-spin 1.8s var(--ease-out-expo) infinite;
 }
 
 .loader__mark::before {
@@ -183,28 +183,6 @@ button, input, textarea { font: inherit; }
   font-size: clamp(1.4rem, 3vw, 1.8rem);
   font-weight: var(--fw-black);
   color: var(--color-text);
-}
-
-/* ── Progress bar ── */
-.loader__progress {
-  position: absolute;
-  bottom: 30%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 160px;
-  height: 2px;
-  background: var(--alpha-white-05);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  z-index: 2;
-}
-
-.loader__progress-bar {
-  height: 100%;
-  width: 0%;
-  background: var(--gradient-gold);
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease-out;
 }
 
 /* ── Ambient particles ── */
@@ -232,9 +210,10 @@ button, input, textarea { font: inherit; }
 .loader__particle:nth-child(5) { left: 25%; top: 55%; animation-delay: 2s; background: var(--color-accent); }
 .loader__particle:nth-child(6) { left: 60%; top: 35%; animation-delay: 0.8s; }
 
-@keyframes loader-diamond-pulse {
-  0%, 100% { transform: rotate(45deg) scale(1); }
-  50% { transform: rotate(45deg) scale(1.15); }
+@keyframes loader-spin {
+  0% { transform: rotate(45deg) scale(1); }
+  50% { transform: rotate(225deg) scale(0.85); }
+  100% { transform: rotate(405deg) scale(1); }
 }
 
 @keyframes loader-particle-float {

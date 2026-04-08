@@ -77,49 +77,61 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
         /* ── Loading Screen ────────────────────────── */
         const loader = document.getElementById('loader');
         const pageWrap = document.querySelector('.page-wrap') as HTMLElement;
-        const loaderBar = document.getElementById('loader-bar');
 
         if (loader) {
-          /* Simulate progress bar */
-          if (loaderBar) {
-            gsap.to(loaderBar, { width: '70%', duration: 1.0, ease: 'power2.out' });
-            gsap.to(loaderBar, { width: '100%', duration: 0.6, delay: 1.0, ease: 'power2.inOut' });
-          }
+          /* Wait for real page readiness: fonts + above-fold images */
+          const fontsReady = document.fonts.ready;
 
-          const loaderLogo = document.getElementById('loader-logo');
-          const headerLogo = document.querySelector('.header__logo') as HTMLElement;
+          const heroImages = Array.from(
+            document.querySelectorAll<HTMLImageElement>('.hero img, .story img, .projects-section img')
+          );
+          const imagePromises = heroImages
+            .filter((img) => !img.complete)
+            .map((img) => new Promise<void>((res) => {
+              img.addEventListener('load', () => res(), { once: true });
+              img.addEventListener('error', () => res(), { once: true });
+            }));
 
-          gsap.to(loader, {
-            opacity: 0,
-            duration: 0.5,
-            delay: 1.9,
-            ease: 'power2.inOut',
-            onStart: () => {
-              /* Fly the loader logo toward the header logo position */
-              if (loaderLogo && headerLogo) {
-                const from = loaderLogo.getBoundingClientRect();
-                const to = headerLogo.getBoundingClientRect();
-                const dx = to.left - from.left;
-                const dy = to.top - from.top;
-                const scaleEnd = to.height / from.height;
+          /* Min 800ms so the loader isn't a flash, max 4s safety cap */
+          const minWait = new Promise<void>((res) => setTimeout(res, 800));
+          const safetyTimeout = new Promise<void>((res) => setTimeout(res, 4000));
 
-                gsap.to(loaderLogo, {
-                  x: dx,
-                  y: dy,
-                  scale: scaleEnd,
-                  duration: 0.5,
-                  ease: 'power3.inOut',
-                });
-              }
-            },
-            onComplete: () => {
-              loader.style.display = 'none';
-              document.body.classList.remove('is-loading');
-              if (pageWrap) pageWrap.style.opacity = '1';
-              animateHero();
-              setupScrollAnimations();
-              initRevealAnimations();
-            },
+          const contentReady = Promise.all([fontsReady, ...imagePromises, minWait]);
+          Promise.race([contentReady, safetyTimeout]).then(() => {
+            const loaderLogo = document.getElementById('loader-logo');
+            const headerLogo = document.querySelector('.header__logo') as HTMLElement;
+
+            /* Stop the spin — settle the diamond before flying */
+            const mark = loader.querySelector('.loader__mark') as HTMLElement;
+            if (mark) mark.style.animation = 'none';
+
+            gsap.to(loader, {
+              opacity: 0,
+              duration: 0.5,
+              delay: 0.15,
+              ease: 'power2.inOut',
+              onStart: () => {
+                if (loaderLogo && headerLogo) {
+                  const from = loaderLogo.getBoundingClientRect();
+                  const to = headerLogo.getBoundingClientRect();
+                  gsap.to(loaderLogo, {
+                    x: to.left - from.left,
+                    y: to.top - from.top,
+                    scale: to.height / from.height,
+                    duration: 0.5,
+                    ease: 'power3.inOut',
+                  });
+                }
+              },
+              onComplete: () => {
+                loader.style.display = 'none';
+                document.body.classList.remove('is-loading');
+                if (pageWrap) pageWrap.style.opacity = '1';
+                animateHero();
+                setupScrollAnimations();
+                initRevealAnimations();
+              },
+            });
           });
         } else {
           document.body.classList.remove('is-loading');
