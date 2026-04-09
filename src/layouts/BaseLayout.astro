@@ -44,6 +44,18 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Atyla Smith",
+      "alternateName": "Atyz Modder",
+      "url": "https://atyzmodder.com",
+      "image": ogImage,
+      "jobTitle": "3D Modeler & Texture Artist",
+      "description": siteMeta.description,
+      "knowsAbout": ["Minecraft Bedrock", "3D Modeling", "Texture Art", "PBR", "Add-on Development", "Graphic Design"],
+      "sameAs": []
+    })} />
     <ClientRouter />
     <script is:inline>
     (function(){
@@ -88,6 +100,9 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       let geoInitialized = false;
       let lenis: Lenis | null = null;
 
+      /* Expose Lenis globally so lightboxes can stop/start it */
+      (window as any).__lenis = null;
+
       /* ── Detect touch-only devices ── */
       const isTouchDevice = () =>
         'ontouchstart' in window && navigator.maxTouchPoints > 0 && !window.matchMedia('(pointer: fine)').matches;
@@ -100,10 +115,14 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
         if (isTouchDevice()) return;
 
         lenis = new Lenis({
-          lerp: 0.1,
-          duration: 1.4,
-          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          lerp: 0.075,
+          wheelMultiplier: 1,
+          touchMultiplier: 1.5,
+          syncTouch: false,
         });
+
+        /* Expose globally */
+        (window as any).__lenis = lenis;
 
         /* Connect Lenis → ScrollTrigger */
         lenis.on('scroll', ScrollTrigger.update);

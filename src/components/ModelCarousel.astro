@@ -244,6 +244,7 @@ import { modelCategories } from '../data/site';
     lb.classList.add('is-open');
     lb.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    (window as any).__lenis?.stop();
   });
 
   async function open3DLightbox(modelUrl: string, title: string, camRaw: string) {
@@ -251,6 +252,9 @@ import { modelCategories } from '../data/site';
     lb3d.classList.add('is-open');
     lb3d.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+
+    /* Stop Lenis so wheel events go to OrbitControls zoom */
+    (window as any).__lenis?.stop();
 
     // Small delay for CSS transition to apply dimensions
     await new Promise(r => setTimeout(r, 50));
@@ -275,12 +279,15 @@ import { modelCategories } from '../data/site';
     lb.classList.remove('is-open');
     lb.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    (window as any).__lenis?.start();
   }
 
   function close3DLb() {
     lb3d.classList.remove('is-open');
     lb3d.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    /* Resume Lenis */
+    (window as any).__lenis?.start();
     if (activeViewer) {
       activeViewer.dispose();
       activeViewer = null;

@@ -146,12 +146,14 @@ import { visualCategories, visuals } from '../data/site';
     lb.classList.add('is-open');
     lb.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    (window as any).__lenis?.stop();
   });
 
   function closeLb() {
     lb.classList.remove('is-open');
     lb.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    (window as any).__lenis?.start();
   }
 
   lb.addEventListener('click', (e) => {
