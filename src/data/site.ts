@@ -216,18 +216,7 @@ export const models = [
       targetZ: 1.485,
       ortho: true,
     },
-    render: {
-      emissive: true,
-      emissiveIntensity: 1.0,
-      oneSided: true,
-      vibrant3d: {
-        enabled: true,
-        aoIntensity: 0.82,
-        envIntensity: 1.05,
-        studioIntensity: 1,
-        heightScale: 0.16,
-      },
-    },
+    render: { emissive: true, emissiveIntensity: 1.0, oneSided: true }
   },
   {
     id: 3, title: 'Hydra Boss', category: 'mobs', image: '/models/hydra.png', model3d: '/models/hydra.geo.gltf',
@@ -321,7 +310,7 @@ export const models = [
 /*
  * ── Como ajustar o material/render do modelo 3D ─────────
  *
- *   render: { emissive, emissiveIntensity, oneSided, vibrant3d }
+ *   render: { emissive, emissiveIntensity, oneSided }
  *
  *   emissive          → aplica autoluz nas partes visíveis da textura.
  *                       Bom para detalhes brilhantes e texturas com alpha.
@@ -332,40 +321,8 @@ export const models = [
  *   oneSided          → força renderização só da face frontal.
  *                       Útil quando o GLTF veio com double-sided e você quer o comportamento one-sided do Minecraft.
  *
- *   vibrant3d.enabled → ativa o pipeline opcional de MER/height + studio lighting + SSAO para esse modelo.
- *                       Se o usuário desligar no botão do lightbox, o modelo continua abrindo, só sem esses extras.
- *
- *   vibrant3d.merTexture    → textura MER no padrão Bedrock.
- *                             R = reflexividade/metalness, G = brilho emissivo, B = roughness.
- *
- *   vibrant3d.heightTexture → heightmap em grayscale.
- *                             Pixels mais claros sobem o relevo visual da textura.
- *
- *   vibrant3d.heightScale   → força do relevo do heightmap.
- *   vibrant3d.metalnessIntensity → peso da reflexividade do canal vermelho.
- *   vibrant3d.roughnessIntensity → peso do canal azul para quebrar aparência plástica/lisa.
- *   vibrant3d.emissiveIntensity  → força do brilho do canal verde.
- *   vibrant3d.envIntensity       → peso das reflexões de estúdio.
- *   vibrant3d.aoIntensity        → peso da oclusão de ambiente/SSAO.
- *   vibrant3d.studioIntensity    → força geral da iluminação tipo studio/sketchfab.
- *
- *   Se você não passar merTexture/heightTexture, o Vibrant 3D ainda pode ser usado só para iluminação e oclusão.
- *
  *   Exemplo:
- *   render: {
- *     emissive: true,
- *     emissiveIntensity: 1.6,
- *     oneSided: true,
- *     vibrant3d: {
- *       enabled: true,
- *       merTexture: '/models/meu_model_mer.png',
- *       heightTexture: '/models/meu_model_height.png',
- *       heightScale: 0.18,
- *       aoIntensity: 0.8,
- *       envIntensity: 1.1,
- *       studioIntensity: 1,
- *     },
- *   }
+ *   render: { emissive: true, emissiveIntensity: 1.6, oneSided: true }
  */
 
 /*
