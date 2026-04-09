@@ -62,7 +62,11 @@ import { modelCategories } from '../data/site';
 
 <script>
   import { models } from '../data/site';
-  import { createModelViewer, type ModelViewer } from '../lib/bedrock-renderer';
+
+  type ModelViewerHandle = {
+    dispose: () => void;
+    resize: () => void;
+  };
 
   /* ── DOM refs ──────────────────────────────────── */
   const wrap   = document.getElementById('models-wrap')!;
@@ -93,7 +97,14 @@ import { modelCategories } from '../data/site';
   let resumeTimer = 0;
   let activeFilter = 'all';
   let filteredCount = 0;
-  let activeViewer: ModelViewer | null = null;
+  let activeViewer: ModelViewerHandle | null = null;
+  let ticker = 0;
+  let ticking = false;
+  let modelViewerModulePromise: Promise<typeof import('../lib/bedrock-renderer')> | null = null;
+
+  function loadModelViewerModule() {
+    return (modelViewerModulePromise ??= import('../lib/bedrock-renderer'));
+  }
 
   /* ── Card HTML builder ───────────────────────────── */
   function cardMarkup(m: typeof models[number]): string {
@@ -102,7 +113,7 @@ import { modelCategories } from '../data/site';
     const camAttr = cam ? ` data-cam="${cam.angle},${cam.height},${cam.zoom},${cam.lookX},${cam.lookY},${cam.ortho ? 1 : 0}"` : '';
     return `<div class="model-card" data-cat="${m.category}" data-src="${m.image}" data-title="${m.title}"${has3d ? ` data-model3d="${(m as any).model3d}"` : ''}${camAttr}>
       <div class="model-card__inner">
-        <img src="${m.image}" alt="${m.title}" loading="lazy" draggable="false" />
+        <img src="${m.image}" alt="${m.title}" loading="lazy" decoding="async" fetchpriority="low" draggable="false" />
         <div class="model-card__shine"></div>
         <div class="model-card__border"></div>
         ${has3d ? '<span class="model-card__3d-badge">3D</span>' : ''}
@@ -117,10 +128,15 @@ import { modelCategories } from '../data/site';
       : models.filter(m => m.category === activeFilter);
 
     filteredCount = list.length;
-    if (filteredCount === 0) { track.innerHTML = ''; setW = 0; return; }
+    if (filteredCount === 0) {
+      track.innerHTML = '';
+      setW = 0;
+      queueTicker();
+      return;
+    }
 
     const approxCard = 380;
-    const setsNeeded = Math.max(Math.ceil((wrap.clientWidth * 3) / (filteredCount * approxCard)) + 1, 5);
+    const setsNeeded = Math.max(Math.ceil((wrap.clientWidth * 3) / (filteredCount * approxCard)) + 1, 3);
 
     let html = '';
     for (let s = 0; s < setsNeeded; s++) {
@@ -133,13 +149,44 @@ import { modelCategories } from '../data/site';
       if (cards.length > filteredCount) {
         setW = (cards[filteredCount] as HTMLElement).offsetLeft - (cards[0] as HTMLElement).offsetLeft;
       }
+      queueTicker();
     });
 
     pos = 0;
+    track.style.transform = 'translate3d(0,0,0)';
+  }
+
+  function shouldTick() {
+    return !document.hidden && setW > 0 && (
+      isDrag ||
+      Math.abs(velocity) > 0.15 ||
+      (isVisible && !isHover && !isPaused)
+    );
+  }
+
+  function stopTicker() {
+    if (!ticking) return;
+    cancelAnimationFrame(ticker);
+    ticker = 0;
+    ticking = false;
+  }
+
+  function queueTicker() {
+    if (shouldTick()) {
+      if (!ticking) {
+        ticking = true;
+        ticker = requestAnimationFrame(tick);
+      }
+      return;
+    }
+
+    stopTicker();
   }
 
   /* ── Animation loop ────────────────────────────── */
   function tick() {
+    if (!ticking) return;
+
     if (isVisible && !isHover && !isDrag && !isPaused && setW > 0) {
       pos -= speed;
     }
@@ -157,16 +204,32 @@ import { modelCategories } from '../data/site';
     }
 
     track.style.transform = `translate3d(${pos}px,0,0)`;
-    requestAnimationFrame(tick);
+
+    if (shouldTick()) {
+      ticker = requestAnimationFrame(tick);
+    } else {
+      ticking = false;
+      ticker = 0;
+    }
   }
 
   /* ── Visibility observer ───────────────────────── */
-  const obs = new IntersectionObserver(([e]) => { isVisible = e.isIntersecting; }, { threshold: 0.08 });
+  const obs = new IntersectionObserver(([e]) => {
+    isVisible = e.isIntersecting;
+    queueTicker();
+  }, { threshold: 0.08 });
   obs.observe(wrap);
 
   /* ── Hover ─────────────────────────────────────── */
-  wrap.addEventListener('pointerenter', () => { isHover = true; });
-  wrap.addEventListener('pointerleave', () => { isHover = false; isDrag = false; });
+  wrap.addEventListener('pointerenter', () => {
+    isHover = true;
+    queueTicker();
+  });
+  wrap.addEventListener('pointerleave', () => {
+    isHover = false;
+    isDrag = false;
+    queueTicker();
+  });
 
   /* ── Drag ──────────────────────────────────────── */
   function onDragMove(e: PointerEvent) {
@@ -184,7 +247,11 @@ import { modelCategories } from '../data/site';
     document.removeEventListener('pointerup', onDragEnd);
     clearTimeout(resumeTimer);
     isPaused = true;
-    resumeTimer = window.setTimeout(() => { isPaused = false; }, 1800);
+    queueTicker();
+    resumeTimer = window.setTimeout(() => {
+      isPaused = false;
+      queueTicker();
+    }, 1800);
   }
 
   wrap.addEventListener('pointerdown', (e) => {
@@ -198,6 +265,7 @@ import { modelCategories } from '../data/site';
     isPaused = false;
     document.addEventListener('pointermove', onDragMove);
     document.addEventListener('pointerup', onDragEnd, { once: true });
+    queueTicker();
   });
 
   wrap.addEventListener('dragstart', (e) => e.preventDefault());
@@ -256,8 +324,12 @@ import { modelCategories } from '../data/site';
     /* Stop Lenis so wheel events go to OrbitControls zoom */
     (window as any).__lenis?.stop();
 
-    // Small delay for CSS transition to apply dimensions
-    await new Promise(r => setTimeout(r, 50));
+    // Wait for layout to settle after the lightbox becomes visible
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
 
     // Parse per-model camera: "angle,height,zoom,lookX,lookY,ortho"
     let camera: { angle: number; height: number; zoom: number; lookX: number; lookY: number; ortho: boolean } | undefined;
@@ -265,6 +337,8 @@ import { modelCategories } from '../data/site';
       const [a, h, z, lx, ly, o] = camRaw.split(',').map(Number);
       camera = { angle: a, height: h, zoom: z, lookX: lx, lookY: ly, ortho: !!o };
     }
+
+    const { createModelViewer } = await loadModelViewerModule();
 
     activeViewer = await createModelViewer({
       canvas: lb3dCanvas,
@@ -319,9 +393,11 @@ import { modelCategories } from '../data/site';
     activeViewer?.resize();
   });
 
+  document.addEventListener('visibilitychange', queueTicker);
+
   /* ── Init ──────────────────────────────────────── */
   build();
-  requestAnimationFrame(tick);
+  queueTicker();
 
   let resizeTimer = 0;
   window.addEventListener('resize', () => {

@@ -103,7 +103,7 @@ export const projects = [
       'Um incrível add-on de batalha com um Boss Hydra, novas armaduras, ferramentas, itens e blocos exclusivos para Minecraft Bedrock.',
     tags: ['Modeling', 'Development', 'Direction'],
     accent: 'amber' as AccentTone,
-    image: '/projects/hydra.png',
+    image: '/projects/hydra.webp',
     link: '#',
   },
   {
@@ -113,7 +113,7 @@ export const projects = [
       'Um emocionante add-on inspirado em Naruto para Minecraft Bedrock, com personagens, jutsus e mecânicas únicas.',
     tags: ['Modeling', 'Development', 'Direction'],
     accent: 'coral' as AccentTone,
-    image: '/projects/shinobi.png',
+    image: '/projects/shinobi.webp',
     link: '#',
   },
   {
@@ -123,7 +123,7 @@ export const projects = [
       'Rio de Janeiro é o mapa definitivo da cidade! Explore Copacabana, Cristo Redentor, Favelas e muito mais. Mobilie sua casa, vários esportes: futebol, vôlei e mais, comida típica brasileira, interface de smartphone, efeitos visuais de realismo, veículos brasileiros 50+, trem, paraquedas, animais, 80 skins megapack e MUITO mais!',
     tags: ['Map', 'VibrantVisuals', 'Design'],
     accent: 'cyan' as AccentTone,
-    image: '/projects/rio.png',
+    image: '/projects/rio.webp',
     link: 'https://youtu.be/qsZQsCNx8y8?si=_rBCRi9LuQQlPgpU',
   },
 ];
@@ -214,13 +214,13 @@ export const models = [
 export const visualCategories = ['All', 'Blocks', 'Entities', 'Items', 'Lighting'] as const;
 
 export const visuals = [
-  { image: '/visuals/1.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/2.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/3.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/4.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/5.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/6.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
-  { image: '/visuals/7.png', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/1.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/2.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/3.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/4.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/5.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/6.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
+  { image: '/visuals/7.webp', title: 'Em breve', category: 'blocks', caption: 'Adicione suas prints aqui' },
 ] as const;
 
 export const contactInfo = {

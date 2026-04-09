@@ -175,6 +175,10 @@ export function initGeoBackground() {
   if (!container) return;
 
   const root = document.documentElement;
+  const perfTier = (window as any).__perfTier;
+  const reducedMotion = !!perfTier?.isReducedMotion;
+  const maxDpr = perfTier?.isLowEnd ? 1 : perfTier?.isMobile ? 1.25 : 1.5;
+  const targetFrameMs = perfTier?.isLowEnd ? 1000 / 20 : perfTier?.isMobile ? 1000 / 24 : 1000 / 30;
   let W = 0;
   let H = 0;
   let dpr = 1;
@@ -193,7 +197,7 @@ export function initGeoBackground() {
   });
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
     W = window.innerWidth;
     H = window.innerHeight;
     for (const rt of runtimes) {
@@ -203,6 +207,8 @@ export function initGeoBackground() {
       rt.canvas.style.height = H + 'px';
       rt.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+
+    renderAll(performance.now(), 0);
   }
 
   resize();
@@ -222,6 +228,11 @@ export function initGeoBackground() {
     container!.style.setProperty('--geo-accent-g', String(g));
     container!.style.setProperty('--geo-accent-b', String(b));
     container!.style.setProperty('--geo-opacity', String(mood.opacityMul));
+
+    if (reducedMotion) {
+      readMood();
+      renderAll(performance.now(), 0);
+    }
   }
 
   /* Set initial mood */
@@ -266,7 +277,6 @@ export function initGeoBackground() {
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   /* Scale mouse parallax based on perf tier (0.4× on mobile, 0× on reduced-motion) */
-  const perfTier = (window as any).__perfTier;
   const parallaxMul = perfTier
     ? (perfTier.isReducedMotion ? 0 : perfTier.isMobile ? 0.4 : 1)
     : 1;
@@ -281,6 +291,9 @@ export function initGeoBackground() {
 
   /* ── Render loop (drift + rotation + mouse only, NO scroll math) ── */
   let lastT = 0;
+  let lastRender = 0;
+  let raf = 0;
+  let running = false;
   let moodFrame = 0;    // read CSS vars every ~6 frames to avoid getComputedStyle spam
 
   function renderLayer(rt: LayerRuntime, now: number, dt: number) {
@@ -330,10 +343,7 @@ export function initGeoBackground() {
     }
   }
 
-  function frame(now: number) {
-    const dt = Math.min((now - lastT) / 1000, 0.1);
-    lastT = now;
-
+  function renderAll(now: number, dt: number) {
     /* Read CSS-transitioned mood values periodically */
     if (++moodFrame % 6 === 0) readMood();
 
@@ -344,9 +354,54 @@ export function initGeoBackground() {
     for (const rt of runtimes) {
       renderLayer(rt, now, dt);
     }
-
-    requestAnimationFrame(frame);
   }
 
-  requestAnimationFrame((now) => { lastT = now; frame(now); });
+  function frame(now: number) {
+    if (!running) return;
+
+    if (now - lastRender >= targetFrameMs) {
+      const dt = Math.min((now - lastT) / 1000, 0.1);
+      lastT = now;
+      lastRender = now;
+      renderAll(now, dt);
+    }
+
+    raf = requestAnimationFrame(frame);
+  }
+
+  function startLoop() {
+    if (running || reducedMotion || document.hidden) return;
+    running = true;
+    lastT = performance.now();
+    lastRender = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function stopLoop() {
+    running = false;
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      stopLoop();
+      return;
+    }
+
+    readMood();
+    renderAll(performance.now(), 0);
+    startLoop();
+  }
+
+  readMood();
+  renderAll(performance.now(), 0);
+
+  if (!reducedMotion) {
+    startLoop();
+  }
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 }

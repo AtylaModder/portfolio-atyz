@@ -37,6 +37,10 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     camera: camCfg,
     onReady,
   } = opts;
+  const perfTier = (window as any).__perfTier;
+  const maxPixelRatio = perfTier?.isLowEnd ? 1 : perfTier?.isMobile ? 1.25 : 1.5;
+  const enablePostProcessing = !(perfTier?.isLowEnd || perfTier?.isMobile);
+  const enableShadows = !perfTier?.isLowEnd;
 
   /* ── Renderer — max quality ────────────────────── */
   const renderer = new THREE.WebGLRenderer({
@@ -45,11 +49,11 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // No tone mapping — preserve original texture colors exactly
   renderer.toneMapping = THREE.NoToneMapping;
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = enableShadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   function updateSize() {
@@ -84,7 +88,7 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   // Key light — neutral white, slightly warm, from upper-right-front
   const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.8);
   keyLight.position.set(5, 8, 6);
-  keyLight.castShadow = true;
+  keyLight.castShadow = enableShadows;
   keyLight.shadow.mapSize.width = 1024;
   keyLight.shadow.mapSize.height = 1024;
   scene.add(keyLight);
@@ -176,18 +180,23 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   const camDist = camera.position.length();
 
   /* ── SSAO — screen-space ambient occlusion ───── */
-  const composer = new EffectComposer(renderer);
-  const renderPass = new RenderPass(scene, camera);
-  composer.addPass(renderPass);
+  let composer: EffectComposer | null = null;
+  let ssaoPass: SSAOPass | null = null;
 
-  const ssaoPass = new SSAOPass(scene, camera, canvas.clientWidth, canvas.clientHeight);
-  ssaoPass.kernelRadius = maxDim * 0.08;
-  ssaoPass.minDistance = 0.0005;
-  ssaoPass.maxDistance = 0.08;
-  composer.addPass(ssaoPass);
+  if (enablePostProcessing) {
+    composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
 
-  const outputPass = new OutputPass();
-  composer.addPass(outputPass);
+    ssaoPass = new SSAOPass(scene, camera, canvas.clientWidth, canvas.clientHeight);
+    ssaoPass.kernelRadius = maxDim * 0.08;
+    ssaoPass.minDistance = 0.0005;
+    ssaoPass.maxDistance = 0.08;
+    composer.addPass(ssaoPass);
+
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+  }
 
   // Update shadow camera to fit model
   const shadowPad = maxDim * 0.8;
@@ -259,7 +268,11 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     const delta = clock.getDelta();
     mixer?.update(delta);
     controls?.update();
-    composer.render();
+    if (composer) {
+      composer.render();
+    } else {
+      renderer.render(scene, camera);
+    }
   }
   animate();
 
@@ -300,8 +313,8 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
         ortho.right = halfH * newAspect;
       }
       camera.updateProjectionMatrix();
-      composer.setSize(w, h);
-      ssaoPass.setSize(w, h);
+      composer?.setSize(w, h);
+      ssaoPass?.setSize(w, h);
     },
     setInteractive(v: boolean) {
       if (controls) controls.enabled = v;

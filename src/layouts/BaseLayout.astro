@@ -88,10 +88,8 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       import { initRevealAnimations } from '../scripts/animations';
       import { initMicrointeractions } from '../scripts/microinteractions';
       import { initCustomCursor } from '../scripts/custom-cursor';
-      import { initHeroParticles } from '../scripts/hero-particles';
       import { getPerfTier, getParallaxScale, monitorFrameRate } from '../scripts/perf-tier';
       import { initCountUpStats } from '../scripts/countup-stats';
-      import { initHeroTyped } from '../scripts/hero-typed';
       import Lenis from 'lenis';
       import gsap from 'gsap';
       import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -100,9 +98,24 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
 
       let geoInitialized = false;
       let lenis: Lenis | null = null;
+      let lenisTicker: ((time: number) => void) | null = null;
+      let heroParticlesModulePromise: Promise<typeof import('../scripts/hero-particles')> | null = null;
+      let heroTypedModulePromise: Promise<typeof import('../scripts/hero-typed')> | null = null;
+      let pageInitialized = false;
+      let pageFinalized = false;
+      let pagePrepared = false;
+      let loaderFailSafe = 0;
 
       /* Expose Lenis globally so lightboxes can stop/start it */
       (window as any).__lenis = null;
+
+      function loadHeroParticlesModule() {
+        return (heroParticlesModulePromise ??= import('../scripts/hero-particles'));
+      }
+
+      function loadHeroTypedModule() {
+        return (heroTypedModulePromise ??= import('../scripts/hero-typed'));
+      }
 
       /* ── Detect touch-only devices ── */
       const isTouchDevice = () =>
@@ -111,6 +124,11 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
       /* ── Initialize / reinitialize Lenis ── */
       function initLenis() {
         if (lenis) { lenis.destroy(); lenis = null; }
+        if (lenisTicker) {
+          gsap.ticker.remove(lenisTicker);
+          lenisTicker = null;
+        }
+        (window as any).__lenis = null;
 
         /* Skip Lenis on touch devices to avoid scroll jank */
         if (isTouchDevice()) return;
@@ -127,8 +145,126 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
 
         /* Connect Lenis → ScrollTrigger */
         lenis.on('scroll', ScrollTrigger.update);
-        gsap.ticker.add((time) => { lenis?.raf(time * 1000); });
+        lenisTicker = (time) => { lenis?.raf(time * 1000); };
+        gsap.ticker.add(lenisTicker);
         gsap.ticker.lagSmoothing(0);
+      }
+
+      async function initHeroParticlesIfNeeded() {
+        const tier = getPerfTier();
+        if (tier.isLowEnd || tier.isTouch || tier.isReducedMotion) return;
+        const { initHeroParticles } = await loadHeroParticlesModule();
+        initHeroParticles();
+      }
+
+      async function initHeroTypedLazy() {
+        const { initHeroTyped } = await loadHeroTypedModule();
+        initHeroTyped();
+      }
+
+      function scheduleDeferredWork(task: () => void, timeout = 600) {
+        if ('requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(task, { timeout });
+          return;
+        }
+
+        globalThis.setTimeout(task, Math.min(timeout, 450));
+      }
+
+      function preparePageExperience() {
+        if (pagePrepared) return;
+        pagePrepared = true;
+
+        setupScrollAnimations();
+        initRevealAnimations();
+
+        /* Small warm-up so hero typing doesn't parse on first visible frame */
+        void loadHeroTypedModule();
+      }
+
+      function finalizePageLoad() {
+        if (pageFinalized) return;
+        pageFinalized = true;
+
+        if (loaderFailSafe) {
+          window.clearTimeout(loaderFailSafe);
+          loaderFailSafe = 0;
+        }
+
+        const pageWrap = document.querySelector('.page-wrap') as HTMLElement | null;
+        const tier = getPerfTier();
+
+        preparePageExperience();
+
+        document.body.classList.remove('is-loading');
+        if (pageWrap) pageWrap.style.opacity = '1';
+
+        animateHero();
+
+        scheduleDeferredWork(() => {
+          if (!tier.isTouch) initCustomCursor();
+        }, 180);
+
+        scheduleDeferredWork(() => {
+          if (!tier.isReducedMotion) initMicrointeractions();
+        }, 420);
+
+        scheduleDeferredWork(() => {
+          void initHeroParticlesIfNeeded();
+        }, 950);
+
+        window.setTimeout(() => {
+          monitorFrameRate();
+        }, 1400);
+      }
+
+      function hideLoaderImmediately(loader: HTMLElement | null) {
+        if (loader) {
+          gsap.killTweensOf(loader);
+          const loaderLogo = document.getElementById('loader-logo');
+          if (loaderLogo) gsap.killTweensOf(loaderLogo);
+          loader.style.opacity = '0';
+          loader.style.display = 'none';
+        }
+
+        finalizePageLoad();
+      }
+
+      function animateLoaderOut(loader: HTMLElement) {
+        if (pageFinalized) return;
+
+        if (loaderFailSafe) {
+          window.clearTimeout(loaderFailSafe);
+          loaderFailSafe = 0;
+        }
+
+        /* Stop the spin — settle the diamond before flying */
+        const mark = loader.querySelector('.loader__mark') as HTMLElement | null;
+        if (mark) mark.style.animation = 'none';
+
+        const loaderLogo = document.getElementById('loader-logo') as HTMLElement | null;
+
+        gsap.to(loader, {
+          opacity: 0,
+          duration: 0.52,
+          delay: 0.12,
+          ease: 'power2.inOut',
+          onStart: () => {
+            if (loaderLogo) {
+              gsap.to(loaderLogo, {
+                y: -10,
+                scale: 0.965,
+                filter: 'blur(1.5px)',
+                duration: 0.48,
+                ease: 'power3.inOut',
+              });
+            }
+          },
+          onComplete: () => {
+            loader.style.display = 'none';
+            finalizePageLoad();
+          },
+        });
       }
 
       /* ── Smooth scroll for hash links without changing URL ── */
@@ -150,7 +286,10 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
         }
       });
 
-      document.addEventListener('astro:page-load', () => {
+      function handlePageLoad() {
+        if (pageInitialized) return;
+        pageInitialized = true;
+
         /* ── Always start at the top on load/reload ── */
         history.scrollRestoration = 'manual';
         window.scrollTo(0, 0);
@@ -167,83 +306,67 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
         /* ── Clean up previous ScrollTriggers on navigation ── */
         ScrollTrigger.getAll().forEach((t) => t.kill());
 
+        pagePrepared = false;
+
         /* ── Loading Screen ────────────────────────── */
         const loader = document.getElementById('loader');
-        const pageWrap = document.querySelector('.page-wrap') as HTMLElement;
+
+        loaderFailSafe = window.setTimeout(() => {
+          hideLoaderImmediately(loader);
+        }, 4200);
 
         if (loader) {
-          /* Wait for real page readiness: fonts + above-fold images */
-          const fontsReady = document.fonts.ready;
+          /* Wait for real page readiness, but never let fonts hold the loader for long */
+          const fontsReady = document.fonts?.ready
+            ? Promise.race([
+                document.fonts.ready,
+                new Promise<void>((res) => setTimeout(res, 1400)),
+              ])
+            : Promise.resolve();
 
-          const heroImages = Array.from(
-            document.querySelectorAll<HTMLImageElement>('.hero img, .story img, .projects-section img')
+          const criticalImages = Array.from(
+            document.querySelectorAll<HTMLImageElement>('.hero img, img[data-loader-critical], [data-loader-critical] img')
           );
-          const imagePromises = heroImages
+          const imagePromises = criticalImages
             .filter((img) => !img.complete)
             .map((img) => new Promise<void>((res) => {
               img.addEventListener('load', () => res(), { once: true });
               img.addEventListener('error', () => res(), { once: true });
             }));
 
-          /* Min 800ms so the loader isn't a flash, max 4s safety cap */
-          const minWait = new Promise<void>((res) => setTimeout(res, 800));
-          const safetyTimeout = new Promise<void>((res) => setTimeout(res, 4000));
+          /* Loader should feel deliberate, but still fail open before feeling stuck */
+          const minWait = new Promise<void>((res) => setTimeout(res, 1250));
+          const safetyTimeout = new Promise<void>((res) => setTimeout(res, 3400));
 
           const contentReady = Promise.all([fontsReady, ...imagePromises, minWait]);
-          Promise.race([contentReady, safetyTimeout]).then(() => {
-            const loaderLogo = document.getElementById('loader-logo');
-            const headerLogo = document.querySelector('.header__logo') as HTMLElement;
-
-            /* Stop the spin — settle the diamond before flying */
-            const mark = loader.querySelector('.loader__mark') as HTMLElement;
-            if (mark) mark.style.animation = 'none';
-
-            gsap.to(loader, {
-              opacity: 0,
-              duration: 0.5,
-              delay: 0.15,
-              ease: 'power2.inOut',
-              onStart: () => {
-                if (loaderLogo && headerLogo) {
-                  const from = loaderLogo.getBoundingClientRect();
-                  const to = headerLogo.getBoundingClientRect();
-                  gsap.to(loaderLogo, {
-                    x: to.left - from.left,
-                    y: to.top - from.top,
-                    scale: to.height / from.height,
-                    duration: 0.5,
-                    ease: 'power3.inOut',
-                  });
-                }
-              },
-              onComplete: () => {
-                loader.style.display = 'none';
-                document.body.classList.remove('is-loading');
-                if (pageWrap) pageWrap.style.opacity = '1';
-                const tier = getPerfTier();
-                animateHero();
-                setupScrollAnimations();
-                initRevealAnimations();
-                if (!tier.isReducedMotion) initMicrointeractions();
-                if (!tier.isTouch) initCustomCursor();
-                if (!tier.isLowEnd) initHeroParticles();
-                monitorFrameRate();
-              },
+          Promise.race([contentReady, safetyTimeout])
+            .then(() => {
+              preparePageExperience();
+              animateLoaderOut(loader);
+            })
+            .catch(() => {
+              hideLoaderImmediately(loader);
             });
-          });
         } else {
-          const tier = getPerfTier();
-          document.body.classList.remove('is-loading');
-          if (pageWrap) pageWrap.style.opacity = '1';
-          animateHero();
-          setupScrollAnimations();
-          initRevealAnimations();
-          if (!tier.isReducedMotion) initMicrointeractions();
-          if (!tier.isTouch) initCustomCursor();
-          if (!tier.isLowEnd) initHeroParticles();
-          monitorFrameRate();
+          finalizePageLoad();
         }
-      });
+      }
+
+      function bootPageLoad() {
+        try {
+          handlePageLoad();
+        } catch {
+          hideLoaderImmediately(document.getElementById('loader'));
+        }
+      }
+
+      document.addEventListener('astro:page-load', bootPageLoad);
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootPageLoad, { once: true });
+      } else {
+        queueMicrotask(bootPageLoad);
+      }
 
       /* ── Hero Entrance ─────────────────────────── */
       function animateHero() {
@@ -254,7 +377,7 @@ const ogImage = new URL(siteMeta.ogImage, Astro.site ?? siteMeta.url).toString()
           .from('.hero__subtitle', { y: 40, opacity: 0, duration: 0.8 }, '-=0.6')
           .from('.hero__cta', { y: 30, opacity: 0, duration: 0.7 }, '-=0.4')
           .from('.hero__scroll', { opacity: 0, duration: 0.6 }, '-=0.2')
-          .call(() => initHeroTyped(), [], '-=0.3');
+          .call(() => { void initHeroTypedLazy(); }, [], '-=0.3');
       }
 
       /* ── All Scroll-Driven Animations ──────────── */

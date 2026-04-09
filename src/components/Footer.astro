@@ -79,15 +79,20 @@ const iconMap: Record<string, string> = {
   const cvs = document.getElementById('pixel-dissolve-mask') as HTMLCanvasElement | null;
 
   if (footer && cvs) {
-    const ctx = cvs.getContext('2d')!;
+    const footerEl = footer;
+    const canvas = cvs;
+    const ctx = canvas.getContext('2d')!;
+    const perfTier = (window as any).__perfTier;
+    const animateMask = !perfTier?.isLowEnd && !perfTier?.isReducedMotion;
 
     /* pixels that float away from the dissolve edge */
-    const MAX_P = 55;
+    const MAX_P = animateMask ? 40 : 0;
+    const FRAME_MS = 1000 / 12;
     type P = { x:number; y:number; vx:number; vy:number; life:number; decay:number; sz:number };
-    let w = 0, h = 0, maskH = 0, cols = 0, rows = 0, px = 10;
+    let w = 0, h = 0, maskH = 0, cols = 0, rows = 0, totalRows = 0, px = 10;
     let grid: number[][] = [];
     let parts: P[] = [];
-    let raf = 0, on = false, t = 0;
+    let raf = 0, on = false, isVisible = false, phase = 0, lastFrame = 0;
 
     const hash = (x: number, y: number) => {
       let v = ((x * 374761393 + y * 668265263) >>> 0);
@@ -96,16 +101,24 @@ const iconMap: Record<string, string> = {
     };
 
     function setup() {
-      const rect = footer!.getBoundingClientRect();
-      w = Math.round(rect.width);
-      h = Math.round(rect.height);
+      const rect = footerEl.getBoundingClientRect();
+      w = Math.max(Math.round(rect.width), 1);
+      h = Math.max(Math.round(rect.height), 1);
       maskH = 200;                          /* dissolve zone height */
-      cvs!.width  = w;
-      cvs!.height = h;
       px = w < 600 ? 7 : w < 1024 ? 10 : 12;
       cols = Math.ceil(w / px);
       rows = Math.ceil(maskH / px);
+      totalRows = Math.ceil(h / px);
+      canvas.width = cols;
+      canvas.height = totalRows;
+      ctx.imageSmoothingEnabled = false;
       grid = [];
+      parts = [];
+
+      footerEl.style.setProperty('mask-size', '100% 100%');
+      footerEl.style.setProperty('-webkit-mask-size', '100% 100%');
+      footerEl.style.setProperty('mask-repeat', 'no-repeat');
+      footerEl.style.setProperty('-webkit-mask-repeat', 'no-repeat');
 
       for (let ry = 0; ry < rows; ry++) {
         grid[ry] = [];
@@ -118,34 +131,33 @@ const iconMap: Record<string, string> = {
         const density = Math.pow(pct, 1.8);
         for (let c = 0; c < cols; c++) grid[ry][c] = hash(c, ry) < density ? 1 : 0;
       }
+      drawMask();
       applyMask();
     }
 
     function spawn() {
-      if (parts.length >= MAX_P) return;
+      if (!animateMask || parts.length >= MAX_P) return;
       const ry = Math.floor(rows * 0.08 + Math.random() * rows * 0.45);
       const cx = Math.floor(Math.random() * cols);
       parts.push({
-        x: cx * px,
-        y: ry * px,
-        vx: (Math.random() - 0.5) * 0.7,
-        vy: -(0.3 + Math.random() * 1.0),
+        x: cx,
+        y: ry,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: -(0.08 + Math.random() * 0.22),
         life: 1,
-        decay: 0.006 + Math.random() * 0.012,
-        sz: px * (0.45 + Math.random() * 0.55),
+        decay: 0.02 + Math.random() * 0.02,
+        sz: 1 + Math.random(),
       });
     }
 
     function applyMask() {
-      const url = cvs!.toDataURL();
-      footer!.style.maskImage = `url(${url})`;
-      footer!.style.webkitMaskImage = `url(${url})`;
+      const url = canvas.toDataURL();
+      footerEl.style.setProperty('mask-image', `url(${url})`);
+      footerEl.style.setProperty('-webkit-mask-image', `url(${url})`);
     }
 
-    function frame() {
-      t++;
-      ctx.clearRect(0, 0, w, h);
-      (ctx as any).imageSmoothingEnabled = false;
+    function drawMask() {
+      ctx.clearRect(0, 0, cols, totalRows);
 
       /* ── dissolve zone (top 200px): pixelated alpha mask ── */
       for (let ry = 0; ry < rows; ry++) {
@@ -153,11 +165,11 @@ const iconMap: Record<string, string> = {
         for (let cx = 0; cx < cols; cx++) {
           if (!grid[ry][cx]) continue;
           let a = 1;
-          if (pct < 0.55) {
-            a = Math.sin(t * 0.03 + hash(cx, ry) * 6.2832) * 0.15 + 0.85;
+          if (animateMask && pct < 0.55) {
+            a = Math.sin(phase * 0.24 + hash(cx, ry) * 6.2832) * 0.15 + 0.85;
           }
           ctx.fillStyle = `rgba(255,255,255,${a})`;
-          ctx.fillRect(cx * px, ry * px, px, px);
+          ctx.fillRect(cx, ry, 1, 1);
         }
       }
 
@@ -170,33 +182,96 @@ const iconMap: Record<string, string> = {
         p.life -= p.decay;
         if (p.life <= 0) { parts.splice(i, 1); continue; }
         ctx.fillStyle = `rgba(255,255,255,${p.life * p.life})`;
+        const size = Math.max(1, Math.round(p.sz));
         ctx.fillRect(
-          Math.round(p.x / px) * px,
-          Math.round(p.y / px) * px,
-          Math.round(p.sz),
-          Math.round(p.sz),
+          Math.round(p.x),
+          Math.round(p.y),
+          size,
+          size,
         );
       }
 
       /* ── rest of footer (below dissolve zone): fully visible ── */
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, maskH, w, h - maskH);
+      ctx.fillRect(0, rows, cols, Math.max(totalRows - rows, 0));
+    }
 
-      /* spawn cadence */
-      if (Math.random() < 0.05) spawn();
-      if (t % 80 === 0) { for (let i = 0; i < 4; i++) spawn(); }
-
+    function renderStatic() {
+      phase = 0;
+      drawMask();
       applyMask();
+    }
+
+    function stop() {
+      on = false;
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    }
+
+    function start() {
+      if (!animateMask || on || document.hidden || !isVisible) return;
+      on = true;
+      lastFrame = 0;
+      raf = requestAnimationFrame(frame);
+    }
+
+    function frame(now: number) {
+      if (!on) return;
+
+      if (lastFrame && now - lastFrame < FRAME_MS) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+
+      lastFrame = now;
+      phase++;
+
+      if (Math.random() < 0.08) spawn();
+      if (phase % 6 === 0) spawn();
+
+      drawMask();
+      applyMask();
+
       if (on) raf = requestAnimationFrame(frame);
     }
 
     const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !on)  { on = true; frame(); }
-      else if (!e.isIntersecting && on) { on = false; cancelAnimationFrame(raf); }
+      isVisible = e.isIntersecting;
+      if (animateMask) {
+        if (isVisible) start();
+        else stop();
+        return;
+      }
+
+      if (isVisible) renderStatic();
     }, { threshold: 0.01 });
 
     setup();
-    obs.observe(footer);
-    window.addEventListener('resize', setup);
+  obs.observe(footerEl);
+
+    if (!animateMask) {
+      renderStatic();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!animateMask) return;
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      stop();
+      setup();
+      if (animateMask) {
+        start();
+      } else {
+        renderStatic();
+      }
+    });
   }
 </script>

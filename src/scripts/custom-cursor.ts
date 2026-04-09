@@ -11,6 +11,7 @@ const isTouchDevice = () =>
 let dot: HTMLElement | null = null;
 let ring: HTMLElement | null = null;
 let active = false;
+let initialized = false;
 
 /* Interactive selectors that trigger the ring expand */
 const INTERACTIVE = 'a, button, [role="button"], .btn, .project-row, .model-card, .contact-card, .stats__item, input, textarea';
@@ -19,6 +20,12 @@ const VIEWER_3D = '.model-lightbox-3d__canvas';
 
 export function initCustomCursor() {
   if (isTouchDevice()) return;
+
+  if (initialized) {
+    document.documentElement.classList.add('has-custom-cursor');
+    active = true;
+    return;
+  }
 
   /* ── Create DOM (once) — ring first, then dot for CSS ~ selector ── */
   if (!ring) {
@@ -122,4 +129,5 @@ export function initCustomCursor() {
   document.addEventListener('mouseout', onOut);
   document.addEventListener('mouseleave', onLeave);
   document.addEventListener('mouseenter', onEnter);
+  initialized = true;
 }
