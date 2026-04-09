@@ -3,6 +3,9 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
 import cloudflare from '@astrojs/cloudflare';
+import vercel from '@astrojs/vercel';
+
+const isVercelBuild = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV;
 
 export default defineConfig({
   site: 'https://atyzmodder.com',
@@ -12,5 +15,6 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
 
-  adapter: cloudflare(),
+  // Keep Cloudflare for Wrangler deploys, but build with the Vercel adapter inside Vercel.
+  adapter: isVercelBuild ? vercel() : cloudflare(),
 });

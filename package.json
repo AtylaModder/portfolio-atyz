@@ -33,6 +33,7 @@
   "dependencies": {
     "@astrojs/check": "^0.9.8",
     "@astrojs/cloudflare": "^13.1.8",
+    "@astrojs/vercel": "^10.0.4",
     "@hackernoon/pixel-icon-library": "^1.0.6",
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/slim": "^3.9.1",
