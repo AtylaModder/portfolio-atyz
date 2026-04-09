@@ -27,12 +27,18 @@
 
 ### Comandos
 
+git push origin main
 ```bash
 npm run dev       # Servidor local (Astro dev)
 npm run build     # astro check && astro build
 npm run preview   # Preview do build
 ```
+git add .
+git commit -m "mensagem"
+git push origin main
 
+ - "deploy": "npm run build && wrangler deploy"
+ - "preview": "npm run build && wrangler dev"
 ### Config (astro.config.mjs)
 - `site`: https://atyzmodder.com
 - Integrations: `sitemap()`
@@ -40,6 +46,7 @@ npm run preview   # Preview do build
 
 ### TypeScript
 - Extends: `astro/tsconfigs/strict`
+
 
 ---
 

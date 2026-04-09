@@ -183,10 +183,112 @@ export function initGeoBackground() {
   let H = 0;
   let dpr = 1;
 
-  /* ── Mood state (read from CSS computed values each frame) ── */
-  const containerStyle = getComputedStyle(container);
-  let accentR = 231, accentG = 195, accentB = 79;  // initial gold
+  /* ── Mood state ─────────────────────────────── */
+  let accentR = 231, accentG = 195, accentB = 79;
   let opacityMul = 1;
+  let targetAccentR = accentR;
+  let targetAccentG = accentG;
+  let targetAccentB = accentB;
+  let targetOpacityMul = opacityMul;
+
+  interface MeasuredSectionMood extends SectionMood {
+    element: HTMLElement;
+    start: number;
+    end: number;
+    center: number;
+  }
+
+  let measuredMoods: MeasuredSectionMood[] = [];
+  let moodTicking = false;
+
+  function clamp01(value: number) {
+    return Math.min(1, Math.max(0, value));
+  }
+
+  function lerp(from: number, to: number, amount: number) {
+    return from + (to - from) * amount;
+  }
+
+  function updateMoodTarget(rgb: [number, number, number], nextOpacity: number) {
+    targetAccentR = rgb[0];
+    targetAccentG = rgb[1];
+    targetAccentB = rgb[2];
+    targetOpacityMul = nextOpacity;
+  }
+
+  function measureSections() {
+    measuredMoods = SECTION_MOODS.flatMap((mood) => {
+      const element = document.querySelector<HTMLElement>(mood.selector);
+      if (!element) return [];
+
+      const rect = element.getBoundingClientRect();
+      const start = window.scrollY + rect.top;
+      const height = Math.max(rect.height, element.offsetHeight, 1);
+
+      return [{
+        ...mood,
+        element,
+        start,
+        end: start + height,
+        center: start + height / 2,
+      }];
+    });
+  }
+
+  function getInterpolatedMood(scrollTop = window.scrollY): { rgb: [number, number, number]; opacityMul: number } {
+    if (!measuredMoods.length) {
+      return { rgb: [231, 195, 79], opacityMul: 1 };
+    }
+
+    const viewportCenter = scrollTop + window.innerHeight * 0.52;
+    const first = measuredMoods[0];
+    const last = measuredMoods[measuredMoods.length - 1];
+
+    if (viewportCenter <= first.center) {
+      return { rgb: first.rgb, opacityMul: first.opacityMul };
+    }
+
+    if (viewportCenter >= last.center) {
+      return { rgb: last.rgb, opacityMul: last.opacityMul };
+    }
+
+    for (let i = 0; i < measuredMoods.length - 1; i++) {
+      const current = measuredMoods[i];
+      const next = measuredMoods[i + 1];
+      if (viewportCenter < current.center || viewportCenter > next.center) continue;
+
+      const amount = clamp01((viewportCenter - current.center) / Math.max(next.center - current.center, 1));
+      return {
+        rgb: [
+          lerp(current.rgb[0], next.rgb[0], amount),
+          lerp(current.rgb[1], next.rgb[1], amount),
+          lerp(current.rgb[2], next.rgb[2], amount),
+        ] as [number, number, number],
+        opacityMul: lerp(current.opacityMul, next.opacityMul, amount),
+      };
+    }
+
+    return { rgb: last.rgb, opacityMul: last.opacityMul };
+  }
+
+  function scheduleMoodUpdate() {
+    if (moodTicking) return;
+    moodTicking = true;
+
+    requestAnimationFrame(() => {
+      moodTicking = false;
+      const nextMood = getInterpolatedMood();
+      updateMoodTarget(nextMood.rgb, nextMood.opacityMul);
+
+      if (reducedMotion) {
+        accentR = targetAccentR;
+        accentG = targetAccentG;
+        accentB = targetAccentB;
+        opacityMul = targetOpacityMul;
+        renderAll(performance.now(), 0);
+      }
+    });
+  }
 
   /* Build the 3 layer canvases */
   const runtimes: LayerRuntime[] = LAYERS.map((cfg) => {
@@ -208,6 +310,7 @@ export function initGeoBackground() {
       rt.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    measureSections();
     renderAll(performance.now(), 0);
   }
 
@@ -217,57 +320,10 @@ export function initGeoBackground() {
   /* ── Scroll → CSS custom property (real-time, passive, no debounce) ── */
   function onScroll() {
     root.style.setProperty('--scroll-y', String(window.scrollY));
+    scheduleMoodUpdate();
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
-
-  /* ── Section mood IntersectionObserver ────── */
-  function setMood(mood: SectionMood) {
-    const [r, g, b] = mood.rgb;
-    container!.style.setProperty('--geo-accent-r', String(r));
-    container!.style.setProperty('--geo-accent-g', String(g));
-    container!.style.setProperty('--geo-accent-b', String(b));
-    container!.style.setProperty('--geo-opacity', String(mood.opacityMul));
-
-    if (reducedMotion) {
-      readMood();
-      renderAll(performance.now(), 0);
-    }
-  }
-
-  /* Set initial mood */
-  setMood(SECTION_MOODS[0]);
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const el = entry.target;
-        const mood = SECTION_MOODS.find(
-          (m) => el.matches(m.selector)
-        );
-        if (mood) setMood(mood);
-      }
-    },
-    { threshold: 0.35 }
-  );
-
-  for (const mood of SECTION_MOODS) {
-    const el = document.querySelector(mood.selector);
-    if (el) observer.observe(el);
-  }
-
-  /* ── Helper: read CSS-transitioned mood values ── */
-  function readMood() {
-    const rVal = containerStyle.getPropertyValue('--geo-accent-r');
-    const gVal = containerStyle.getPropertyValue('--geo-accent-g');
-    const bVal = containerStyle.getPropertyValue('--geo-accent-b');
-    const oVal = containerStyle.getPropertyValue('--geo-opacity');
-    if (rVal) accentR = parseFloat(rVal);
-    if (gVal) accentG = parseFloat(gVal);
-    if (bVal) accentB = parseFloat(bVal);
-    if (oVal) opacityMul = parseFloat(oVal);
-  }
 
   /* ── Mouse tracking (desktop only, with lerp) ── */
   let mouseX = 0.5;
@@ -294,7 +350,6 @@ export function initGeoBackground() {
   let lastRender = 0;
   let raf = 0;
   let running = false;
-  let moodFrame = 0;    // read CSS vars every ~6 frames to avoid getComputedStyle spam
 
   function renderLayer(rt: LayerRuntime, now: number, dt: number) {
     rt.ctx.clearRect(0, 0, W, H);
@@ -344,8 +399,11 @@ export function initGeoBackground() {
   }
 
   function renderAll(now: number, dt: number) {
-    /* Read CSS-transitioned mood values periodically */
-    if (++moodFrame % 6 === 0) readMood();
+    const moodEase = reducedMotion ? 1 : 0.08;
+    accentR = lerp(accentR, targetAccentR, moodEase);
+    accentG = lerp(accentG, targetAccentG, moodEase);
+    accentB = lerp(accentB, targetAccentB, moodEase);
+    opacityMul = lerp(opacityMul, targetOpacityMul, reducedMotion ? 1 : 0.06);
 
     /* Lerp mouse */
     mouseX += (targetMX - mouseX) * 0.04;
@@ -391,12 +449,18 @@ export function initGeoBackground() {
       return;
     }
 
-    readMood();
+    scheduleMoodUpdate();
     renderAll(performance.now(), 0);
     startLoop();
   }
 
-  readMood();
+  measureSections();
+  const initialMood = getInterpolatedMood();
+  updateMoodTarget(initialMood.rgb, initialMood.opacityMul);
+  accentR = targetAccentR;
+  accentG = targetAccentG;
+  accentB = targetAccentB;
+  opacityMul = targetOpacityMul;
   renderAll(performance.now(), 0);
 
   if (!reducedMotion) {

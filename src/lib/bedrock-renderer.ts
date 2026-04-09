@@ -12,13 +12,60 @@ import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* ─── Public interface ─────────────────────────────────── */
+export interface ModelViewerCameraConfig {
+  angle: number;
+  height: number;
+  zoom: number;
+  lookX: number;
+  lookY: number;
+  lookZ?: number;
+  ortho: boolean;
+  positionX?: number;
+  positionY?: number;
+  positionZ?: number;
+  targetX?: number;
+  targetY?: number;
+  targetZ?: number;
+}
+
+export interface ModelViewerExactCameraConfig extends ModelViewerCameraConfig {
+  lookZ: number;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  targetX: number;
+  targetY: number;
+  targetZ: number;
+}
+
+export interface ModelViewerCameraDebugInfo {
+  mode: 'orthographic' | 'perspective';
+  angle: number;
+  height: number;
+  zoom: number;
+  cameraZoom: number;
+  distance: number;
+  position: { x: number; y: number; z: number };
+  target: { x: number; y: number; z: number };
+  compactConfig: ModelViewerCameraConfig;
+  exactConfig: ModelViewerExactCameraConfig;
+}
+
+export interface ModelViewerRenderConfig {
+  emissive?: boolean;
+  emissiveIntensity?: number;
+  oneSided?: boolean;
+}
+
 export interface ModelViewerOptions {
   canvas: HTMLCanvasElement;
   modelUrl: string;
   animationIndex?: number;
   interactive?: boolean;
   /** Per-model camera config */
-  camera?: { angle: number; height: number; zoom: number; lookX: number; lookY: number; ortho: boolean };
+  camera?: ModelViewerCameraConfig;
+  /** Per-model render/material config */
+  render?: ModelViewerRenderConfig;
   onReady?: () => void;
 }
 
@@ -26,6 +73,7 @@ export interface ModelViewer {
   dispose: () => void;
   resize: () => void;
   setInteractive: (v: boolean) => void;
+  getCameraDebugInfo: () => ModelViewerCameraDebugInfo;
 }
 
 export async function createModelViewer(opts: ModelViewerOptions): Promise<ModelViewer> {
@@ -35,12 +83,18 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     animationIndex,
     interactive = true,
     camera: camCfg,
+    render: renderCfg,
     onReady,
   } = opts;
   const perfTier = (window as any).__perfTier;
   const maxPixelRatio = perfTier?.isLowEnd ? 1 : perfTier?.isMobile ? 1.25 : 1.5;
   const enablePostProcessing = !(perfTier?.isLowEnd || perfTier?.isMobile);
   const enableShadows = !perfTier?.isLowEnd;
+
+  function round(value: number, decimals = 3) {
+    const factor = 10 ** decimals;
+    return Math.round(value * factor) / factor;
+  }
 
   /* ── Renderer — max quality ────────────────────── */
   const renderer = new THREE.WebGLRenderer({
@@ -112,18 +166,49 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   const loader = new GLTFLoader();
   const gltf = await loader.loadAsync(modelUrl);
   const model = gltf.scene;
+  type ViewerMaterial = THREE.Material & {
+    map?: THREE.Texture | null;
+    normalMap?: THREE.Texture | null;
+    emissive?: THREE.Color;
+    emissiveIntensity?: number;
+    emissiveMap?: THREE.Texture | null;
+    alphaMap?: THREE.Texture | null;
+    roughnessMap?: THREE.Texture | null;
+    metalnessMap?: THREE.Texture | null;
+    aoMap?: THREE.Texture | null;
+  };
+  const enableEmissive = renderCfg?.emissive ?? false;
+  const emissiveIntensity = renderCfg?.emissiveIntensity ?? 1.35;
+  const forceOneSided = renderCfg?.oneSided ?? false;
 
   // Make sure textures use nearest-neighbor filtering for pixel art style
   model.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       const mats = Array.isArray(child.material) ? child.material : [child.material];
       mats.forEach((mat) => {
-        if (mat.map) {
-          mat.map.magFilter = THREE.NearestFilter;
-          mat.map.minFilter = THREE.NearestFilter;
-          mat.map.generateMipmaps = false;
-          mat.map.needsUpdate = true;
+        const material = mat as ViewerMaterial;
+
+        if (material.map) {
+          material.map.magFilter = THREE.NearestFilter;
+          material.map.minFilter = THREE.NearestFilter;
+          material.map.generateMipmaps = false;
+          material.map.needsUpdate = true;
         }
+
+        if (forceOneSided) {
+          material.side = THREE.FrontSide;
+          material.shadowSide = THREE.FrontSide;
+        }
+
+        if (enableEmissive && material.emissive) {
+          material.emissive.setRGB(1, 1, 1);
+          material.emissiveIntensity = emissiveIntensity;
+          if (material.map && !material.emissiveMap) {
+            material.emissiveMap = material.map;
+          }
+        }
+
+        material.needsUpdate = true;
       });
     }
   });
@@ -133,6 +218,11 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
+  const safeSizeX = Math.abs(size.x) > 0.0001 ? size.x : maxDim || 1;
+  const safeSizeY = Math.abs(size.y) > 0.0001 ? size.y : maxDim || 1;
+  const safeSizeZ = Math.abs(size.z) > 0.0001 ? size.z : maxDim || 1;
+  const hasExplicitPosition = camCfg?.positionX !== undefined || camCfg?.positionY !== undefined || camCfg?.positionZ !== undefined;
+  const hasExplicitTarget = camCfg?.targetX !== undefined || camCfg?.targetY !== undefined || camCfg?.targetZ !== undefined;
 
   // Center model at origin
   model.position.sub(center);
@@ -141,7 +231,10 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   // Camera target — use per-model offsets or defaults
   const lookXOffset = camCfg ? camCfg.lookX : 0;
   const lookYOffset = camCfg ? camCfg.lookY : 0;
-  const lookTarget = new THREE.Vector3(size.x * lookXOffset, size.y * lookYOffset, 0);
+  const lookZOffset = camCfg?.lookZ ?? 0;
+  const lookTarget = hasExplicitTarget
+    ? new THREE.Vector3(camCfg?.targetX ?? 0, camCfg?.targetY ?? 0, camCfg?.targetZ ?? 0)
+    : new THREE.Vector3(safeSizeX * lookXOffset, safeSizeY * lookYOffset, safeSizeZ * lookZOffset);
 
   // Camera distance — fit model comfortably with margin
   const zoomMul = camCfg ? camCfg.zoom : 1.2;
@@ -151,28 +244,37 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   const heightDeg = camCfg ? camCfg.height : 72;
   const theta = THREE.MathUtils.degToRad(angleDeg);
   const phi = THREE.MathUtils.degToRad(heightDeg);
+  const perspectiveFov = (camera as THREE.PerspectiveCamera).fov;
+  const perspectiveFovRad = THREE.MathUtils.degToRad(perspectiveFov / 2);
+  const baseFitDistance = (maxDim / 2) / Math.tan(perspectiveFovRad);
 
   if (useOrtho) {
     // Orthographic camera — no perspective distortion, like Blockbench
     const orthoHalfH = (maxDim / 2) * zoomMul;
     const orthoHalfW = orthoHalfH * aspect;
     camera = new THREE.OrthographicCamera(-orthoHalfW, orthoHalfW, orthoHalfH, -orthoHalfH, 0.01, maxDim * 10);
-    const orthoDist = maxDim * 3;
-    camera.position.set(
-      orthoDist * Math.sin(phi) * Math.sin(theta),
-      orthoDist * Math.cos(phi),
-      orthoDist * Math.sin(phi) * Math.cos(theta)
-    );
+    if (hasExplicitPosition) {
+      camera.position.set(camCfg?.positionX ?? 0, camCfg?.positionY ?? 0, camCfg?.positionZ ?? maxDim * 3);
+    } else {
+      const orthoDist = maxDim * 3;
+      camera.position.set(
+        orthoDist * Math.sin(phi) * Math.sin(theta),
+        orthoDist * Math.cos(phi),
+        orthoDist * Math.sin(phi) * Math.cos(theta)
+      );
+    }
   } else {
     // Perspective camera
-    const fovRad = THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov / 2);
-    const fitDistance = (maxDim / 2) / Math.tan(fovRad);
-    const camDist = fitDistance * zoomMul;
-    camera.position.set(
-      camDist * Math.sin(phi) * Math.sin(theta),
-      camDist * Math.cos(phi),
-      camDist * Math.sin(phi) * Math.cos(theta)
-    );
+    if (hasExplicitPosition) {
+      camera.position.set(camCfg?.positionX ?? 0, camCfg?.positionY ?? 0, camCfg?.positionZ ?? baseFitDistance * zoomMul);
+    } else {
+      const camDist = baseFitDistance * zoomMul;
+      camera.position.set(
+        camDist * Math.sin(phi) * Math.sin(theta),
+        camDist * Math.cos(phi),
+        camDist * Math.sin(phi) * Math.cos(theta)
+      );
+    }
   }
   camera.lookAt(lookTarget);
 
@@ -278,6 +380,74 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
 
   onReady?.();
 
+  function getCameraDebugInfo(): ModelViewerCameraDebugInfo {
+    const target = controls?.target.clone() ?? lookTarget.clone();
+    const position = camera.position.clone();
+    const offset = position.clone().sub(target);
+    const distance = Math.max(offset.length(), 0.0001);
+    const angle = (THREE.MathUtils.radToDeg(Math.atan2(offset.x, offset.z)) + 360) % 360;
+    const height = THREE.MathUtils.radToDeg(
+      Math.acos(THREE.MathUtils.clamp(offset.y / distance, -1, 1))
+    );
+    const lookX = target.x / safeSizeX;
+    const lookY = target.y / safeSizeY;
+    const lookZ = target.z / safeSizeZ;
+    const cameraZoom = camera instanceof THREE.OrthographicCamera ? camera.zoom : camera.zoom;
+    const zoom = camera instanceof THREE.OrthographicCamera
+      ? (((camera.top - camera.bottom) / 2) / Math.max(camera.zoom, 0.0001)) / Math.max(maxDim / 2, 0.0001)
+      : distance / Math.max(baseFitDistance, 0.0001);
+
+    const compactConfig: ModelViewerCameraConfig = {
+      angle: round(angle, 1),
+      height: round(height, 1),
+      zoom: round(zoom),
+      lookX: round(lookX),
+      lookY: round(lookY),
+      ortho: camera instanceof THREE.OrthographicCamera,
+    };
+
+    if (Math.abs(lookZ) > 0.0005) {
+      compactConfig.lookZ = round(lookZ);
+    }
+
+    const exactConfig: ModelViewerExactCameraConfig = {
+      angle: round(angle, 1),
+      height: round(height, 1),
+      zoom: round(zoom),
+      lookX: round(lookX),
+      lookY: round(lookY),
+      lookZ: round(lookZ),
+      ortho: camera instanceof THREE.OrthographicCamera,
+      positionX: round(position.x),
+      positionY: round(position.y),
+      positionZ: round(position.z),
+      targetX: round(target.x),
+      targetY: round(target.y),
+      targetZ: round(target.z),
+    };
+
+    return {
+      mode: camera instanceof THREE.OrthographicCamera ? 'orthographic' : 'perspective',
+      angle: round(angle, 1),
+      height: round(height, 1),
+      zoom: round(zoom),
+      cameraZoom: round(cameraZoom),
+      distance: round(distance),
+      position: {
+        x: round(position.x),
+        y: round(position.y),
+        z: round(position.z),
+      },
+      target: {
+        x: round(target.x),
+        y: round(target.y),
+        z: round(target.z),
+      },
+      compactConfig,
+      exactConfig,
+    };
+  }
+
   /* ── Return handle ─────────────────────────────── */
   return {
     dispose() {
@@ -286,15 +456,31 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
       controls?.dispose();
       mixer?.stopAllAction();
       renderer.dispose();
+      const disposedTextures = new Set<THREE.Texture>();
+      const disposedMaterials = new Set<THREE.Material>();
+      const disposeTexture = (texture?: THREE.Texture | null) => {
+        if (!texture || disposedTextures.has(texture)) return;
+        disposedTextures.add(texture);
+        texture.dispose();
+      };
+
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
           const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          mats.forEach(m => {
-            if (m.map) m.map.dispose();
-            if (m.normalMap) m.normalMap.dispose();
-            if (m.emissiveMap) m.emissiveMap.dispose();
-            m.dispose();
+          mats.forEach((mat) => {
+            if (disposedMaterials.has(mat)) return;
+            disposedMaterials.add(mat);
+
+            const material = mat as ViewerMaterial;
+            disposeTexture(material.map);
+            disposeTexture(material.normalMap);
+            disposeTexture(material.emissiveMap);
+            disposeTexture(material.alphaMap);
+            disposeTexture(material.roughnessMap);
+            disposeTexture(material.metalnessMap);
+            disposeTexture(material.aoMap);
+            mat.dispose();
           });
         }
       });
@@ -319,5 +505,6 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     setInteractive(v: boolean) {
       if (controls) controls.enabled = v;
     },
+    getCameraDebugInfo,
   };
 }

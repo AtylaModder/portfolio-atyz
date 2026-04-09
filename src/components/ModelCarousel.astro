@@ -52,6 +52,44 @@ import { modelCategories } from '../data/site';
   <div class="model-lightbox__backdrop"></div>
   <div class="model-lightbox-3d__body">
     <button class="model-lightbox__close" id="lb3d-close" aria-label="Fechar"></button>
+    <button class="model-lightbox-3d__debug-toggle" id="lb3d-debug-toggle" type="button" aria-controls="lb3d-debug" aria-expanded="true">
+      Camera
+    </button>
+    <aside class="model-lightbox-3d__debug" id="lb3d-debug" data-open="true" data-lenis-prevent>
+      <div class="model-lightbox-3d__debug-header">
+        <div>
+          <p class="model-lightbox-3d__debug-title">Camera debug</p>
+          <p class="model-lightbox-3d__debug-subtitle">Valores ao vivo para colar em models</p>
+        </div>
+        <span class="model-lightbox-3d__debug-status" id="lb3d-debug-status">Ao vivo</span>
+      </div>
+
+      <div class="model-lightbox-3d__debug-grid">
+        <div><span>Modo</span><strong id="lb3d-debug-mode">-</strong></div>
+        <div><span>Ângulo</span><strong id="lb3d-debug-angle">-</strong></div>
+        <div><span>Height</span><strong id="lb3d-debug-height">-</strong></div>
+        <div><span>Zoom</span><strong id="lb3d-debug-zoom">-</strong></div>
+        <div><span>Camera zoom</span><strong id="lb3d-debug-camera-zoom">-</strong></div>
+        <div><span>Distância</span><strong id="lb3d-debug-distance">-</strong></div>
+        <div><span>Pos X</span><strong id="lb3d-debug-pos-x">-</strong></div>
+        <div><span>Pos Y</span><strong id="lb3d-debug-pos-y">-</strong></div>
+        <div><span>Pos Z</span><strong id="lb3d-debug-pos-z">-</strong></div>
+        <div><span>Target X</span><strong id="lb3d-debug-target-x">-</strong></div>
+        <div><span>Target Y</span><strong id="lb3d-debug-target-y">-</strong></div>
+        <div><span>Target Z</span><strong id="lb3d-debug-target-z">-</strong></div>
+      </div>
+
+      <div class="model-lightbox-3d__debug-actions">
+        <button class="model-lightbox-3d__debug-btn" id="lb3d-copy-compact" type="button">Copiar base</button>
+        <button class="model-lightbox-3d__debug-btn" id="lb3d-copy-exact" type="button">Copiar exata</button>
+      </div>
+
+      <p class="model-lightbox-3d__debug-label">Config base</p>
+      <pre class="model-lightbox-3d__debug-code" id="lb3d-debug-compact">camera: {}</pre>
+
+      <p class="model-lightbox-3d__debug-label">Config exata</p>
+      <pre class="model-lightbox-3d__debug-code" id="lb3d-debug-exact">camera: {}</pre>
+    </aside>
     <canvas class="model-lightbox-3d__canvas" id="lb3d-canvas"></canvas>
     <div class="model-lightbox-3d__info">
       <p class="model-lightbox-3d__title" id="lb3d-title"></p>
@@ -63,9 +101,45 @@ import { modelCategories } from '../data/site';
 <script>
   import { models } from '../data/site';
 
+  type ViewerCameraConfig = {
+    angle: number;
+    height: number;
+    zoom: number;
+    lookX: number;
+    lookY: number;
+    lookZ?: number;
+    ortho: boolean;
+    positionX?: number;
+    positionY?: number;
+    positionZ?: number;
+    targetX?: number;
+    targetY?: number;
+    targetZ?: number;
+  };
+
+  type ViewerRenderConfig = {
+    emissive?: boolean;
+    emissiveIntensity?: number;
+    oneSided?: boolean;
+  };
+
+  type ViewerCameraDebugInfo = {
+    mode: 'orthographic' | 'perspective';
+    angle: number;
+    height: number;
+    zoom: number;
+    cameraZoom: number;
+    distance: number;
+    position: { x: number; y: number; z: number };
+    target: { x: number; y: number; z: number };
+    compactConfig: ViewerCameraConfig;
+    exactConfig: ViewerCameraConfig;
+  };
+
   type ModelViewerHandle = {
     dispose: () => void;
     resize: () => void;
+    getCameraDebugInfo: () => ViewerCameraDebugInfo;
   };
 
   /* ── DOM refs ──────────────────────────────────── */
@@ -80,6 +154,27 @@ import { modelCategories } from '../data/site';
   const lb3d      = document.getElementById('model-lightbox-3d')!;
   const lb3dCanvas = document.getElementById('lb3d-canvas') as HTMLCanvasElement;
   const lb3dTitle  = document.getElementById('lb3d-title')!;
+  const lb3dDebug = document.getElementById('lb3d-debug') as HTMLElement;
+  const lb3dDebugToggle = document.getElementById('lb3d-debug-toggle') as HTMLButtonElement;
+  const lb3dDebugStatus = document.getElementById('lb3d-debug-status') as HTMLElement;
+  const lb3dDebugCompact = document.getElementById('lb3d-debug-compact') as HTMLElement;
+  const lb3dDebugExact = document.getElementById('lb3d-debug-exact') as HTMLElement;
+  const lb3dCopyCompact = document.getElementById('lb3d-copy-compact') as HTMLButtonElement;
+  const lb3dCopyExact = document.getElementById('lb3d-copy-exact') as HTMLButtonElement;
+  const debugFields = {
+    mode: document.getElementById('lb3d-debug-mode') as HTMLElement,
+    angle: document.getElementById('lb3d-debug-angle') as HTMLElement,
+    height: document.getElementById('lb3d-debug-height') as HTMLElement,
+    zoom: document.getElementById('lb3d-debug-zoom') as HTMLElement,
+    cameraZoom: document.getElementById('lb3d-debug-camera-zoom') as HTMLElement,
+    distance: document.getElementById('lb3d-debug-distance') as HTMLElement,
+    posX: document.getElementById('lb3d-debug-pos-x') as HTMLElement,
+    posY: document.getElementById('lb3d-debug-pos-y') as HTMLElement,
+    posZ: document.getElementById('lb3d-debug-pos-z') as HTMLElement,
+    targetX: document.getElementById('lb3d-debug-target-x') as HTMLElement,
+    targetY: document.getElementById('lb3d-debug-target-y') as HTMLElement,
+    targetZ: document.getElementById('lb3d-debug-target-z') as HTMLElement,
+  };
 
   /* ── State ─────────────────────────────────────── */
   let pos = 0;
@@ -100,7 +195,127 @@ import { modelCategories } from '../data/site';
   let activeViewer: ModelViewerHandle | null = null;
   let ticker = 0;
   let ticking = false;
+  let debugTicker = 0;
+  let lastCameraDebugInfo: ViewerCameraDebugInfo | null = null;
   let modelViewerModulePromise: Promise<typeof import('../lib/bedrock-renderer')> | null = null;
+
+  const defaultDebugOpen = () => window.innerWidth >= 1024;
+
+  function setDebugPanelOpen(isOpen: boolean) {
+    lb3dDebug.dataset.open = isOpen ? 'true' : 'false';
+    lb3dDebugToggle.setAttribute('aria-expanded', String(isOpen));
+    lb3dDebugToggle.textContent = isOpen ? 'Ocultar camera' : 'Mostrar camera';
+  }
+
+  function formatValue(value: number, decimals = 3) {
+    return Number.isFinite(value) ? value.toFixed(decimals) : '-';
+  }
+
+  function formatCameraConfig(config: ViewerCameraConfig, exact = false) {
+    const lines = [
+      'camera: {',
+      `  angle: ${formatValue(config.angle, 1)},`,
+      `  height: ${formatValue(config.height, 1)},`,
+      `  zoom: ${formatValue(config.zoom)},`,
+      `  lookX: ${formatValue(config.lookX)},`,
+      `  lookY: ${formatValue(config.lookY)},`,
+    ];
+
+    if (config.lookZ !== undefined || exact) {
+      lines.push(`  lookZ: ${formatValue(config.lookZ ?? 0)},`);
+    }
+
+    if (exact) {
+      lines.push(`  positionX: ${formatValue(config.positionX ?? 0)},`);
+      lines.push(`  positionY: ${formatValue(config.positionY ?? 0)},`);
+      lines.push(`  positionZ: ${formatValue(config.positionZ ?? 0)},`);
+      lines.push(`  targetX: ${formatValue(config.targetX ?? 0)},`);
+      lines.push(`  targetY: ${formatValue(config.targetY ?? 0)},`);
+      lines.push(`  targetZ: ${formatValue(config.targetZ ?? 0)},`);
+    }
+
+    lines.push(`  ortho: ${config.ortho},`);
+    lines.push('},');
+
+    return lines.join('\n');
+  }
+
+  function parseCameraConfig(camRaw: string): ViewerCameraConfig | undefined {
+    if (!camRaw) return undefined;
+
+    try {
+      return JSON.parse(decodeURIComponent(camRaw));
+    } catch {
+      const parts = camRaw.split(',').map(Number);
+      if (parts.length < 6) return undefined;
+      const [a, h, z, lx, ly, o] = parts;
+      return { angle: a, height: h, zoom: z, lookX: lx, lookY: ly, ortho: !!o };
+    }
+  }
+
+  function parseRenderConfig(renderRaw: string): ViewerRenderConfig | undefined {
+    if (!renderRaw) return undefined;
+
+    try {
+      return JSON.parse(decodeURIComponent(renderRaw));
+    } catch {
+      return undefined;
+    }
+  }
+
+  function renderCameraDebug() {
+    if (!activeViewer) return;
+
+    const info = activeViewer.getCameraDebugInfo();
+    lastCameraDebugInfo = info;
+
+    debugFields.mode.textContent = info.mode === 'orthographic' ? 'Ortho' : 'Persp';
+    debugFields.angle.textContent = formatValue(info.angle, 1);
+    debugFields.height.textContent = formatValue(info.height, 1);
+    debugFields.zoom.textContent = formatValue(info.zoom);
+    debugFields.cameraZoom.textContent = formatValue(info.cameraZoom);
+    debugFields.distance.textContent = formatValue(info.distance);
+    debugFields.posX.textContent = formatValue(info.position.x);
+    debugFields.posY.textContent = formatValue(info.position.y);
+    debugFields.posZ.textContent = formatValue(info.position.z);
+    debugFields.targetX.textContent = formatValue(info.target.x);
+    debugFields.targetY.textContent = formatValue(info.target.y);
+    debugFields.targetZ.textContent = formatValue(info.target.z);
+
+    lb3dDebugCompact.textContent = formatCameraConfig(info.compactConfig);
+    lb3dDebugExact.textContent = formatCameraConfig(info.exactConfig, true);
+
+    debugTicker = requestAnimationFrame(renderCameraDebug);
+  }
+
+  function startCameraDebug() {
+    if (debugTicker) cancelAnimationFrame(debugTicker);
+    renderCameraDebug();
+  }
+
+  function stopCameraDebug() {
+    if (debugTicker) {
+      cancelAnimationFrame(debugTicker);
+      debugTicker = 0;
+    }
+    lastCameraDebugInfo = null;
+    lb3dDebugStatus.textContent = 'Fechado';
+  }
+
+  async function copyCameraConfig(kind: 'compact' | 'exact') {
+    if (!lastCameraDebugInfo) return;
+
+    const text = kind === 'exact'
+      ? formatCameraConfig(lastCameraDebugInfo.exactConfig, true)
+      : formatCameraConfig(lastCameraDebugInfo.compactConfig);
+
+    try {
+      await navigator.clipboard.writeText(text);
+      lb3dDebugStatus.textContent = kind === 'exact' ? 'Config exata copiada' : 'Config base copiada';
+    } catch {
+      lb3dDebugStatus.textContent = 'Falha ao copiar';
+    }
+  }
 
   function loadModelViewerModule() {
     return (modelViewerModulePromise ??= import('../lib/bedrock-renderer'));
@@ -110,8 +325,10 @@ import { modelCategories } from '../data/site';
   function cardMarkup(m: typeof models[number]): string {
     const has3d = 'model3d' in m && (m as any).model3d;
     const cam = 'camera' in m ? (m as any).camera : null;
-    const camAttr = cam ? ` data-cam="${cam.angle},${cam.height},${cam.zoom},${cam.lookX},${cam.lookY},${cam.ortho ? 1 : 0}"` : '';
-    return `<div class="model-card" data-cat="${m.category}" data-src="${m.image}" data-title="${m.title}"${has3d ? ` data-model3d="${(m as any).model3d}"` : ''}${camAttr}>
+    const render = 'render' in m ? (m as any).render : null;
+    const camAttr = cam ? ` data-cam="${encodeURIComponent(JSON.stringify(cam))}"` : '';
+    const renderAttr = render ? ` data-render="${encodeURIComponent(JSON.stringify(render))}"` : '';
+    return `<div class="model-card" data-cat="${m.category}" data-src="${m.image}" data-title="${m.title}"${has3d ? ` data-model3d="${(m as any).model3d}"` : ''}${camAttr}${renderAttr}>
       <div class="model-card__inner">
         <img src="${m.image}" alt="${m.title}" loading="lazy" decoding="async" fetchpriority="low" draggable="false" />
         <div class="model-card__shine"></div>
@@ -298,7 +515,8 @@ import { modelCategories } from '../data/site';
     // If model has 3D data, open the 3D viewer
     if (modelUrl) {
       const camRaw = card.dataset.cam || '';
-      open3DLightbox(modelUrl, title, camRaw);
+      const renderRaw = card.dataset.render || '';
+      open3DLightbox(modelUrl, title, camRaw, renderRaw);
       return;
     }
 
@@ -315,11 +533,13 @@ import { modelCategories } from '../data/site';
     (window as any).__lenis?.stop();
   });
 
-  async function open3DLightbox(modelUrl: string, title: string, camRaw: string) {
+  async function open3DLightbox(modelUrl: string, title: string, camRaw: string, renderRaw: string) {
     lb3dTitle.textContent = title;
     lb3d.classList.add('is-open');
     lb3d.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    lb3dDebugStatus.textContent = 'Ao vivo';
+    setDebugPanelOpen(defaultDebugOpen());
 
     /* Stop Lenis so wheel events go to OrbitControls zoom */
     (window as any).__lenis?.stop();
@@ -331,12 +551,8 @@ import { modelCategories } from '../data/site';
       });
     });
 
-    // Parse per-model camera: "angle,height,zoom,lookX,lookY,ortho"
-    let camera: { angle: number; height: number; zoom: number; lookX: number; lookY: number; ortho: boolean } | undefined;
-    if (camRaw) {
-      const [a, h, z, lx, ly, o] = camRaw.split(',').map(Number);
-      camera = { angle: a, height: h, zoom: z, lookX: lx, lookY: ly, ortho: !!o };
-    }
+    const camera = parseCameraConfig(camRaw);
+    const render = parseRenderConfig(renderRaw);
 
     const { createModelViewer } = await loadModelViewerModule();
 
@@ -345,8 +561,10 @@ import { modelCategories } from '../data/site';
       modelUrl,
       interactive: true,
       camera,
+      render,
     });
     activeViewer.resize();
+    startCameraDebug();
   }
 
   function closeLb() {
@@ -360,6 +578,7 @@ import { modelCategories } from '../data/site';
     lb3d.classList.remove('is-open');
     lb3d.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    stopCameraDebug();
     /* Resume Lenis */
     (window as any).__lenis?.start();
     if (activeViewer) {
@@ -375,8 +594,21 @@ import { modelCategories } from '../data/site';
 
   lb3d.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target.closest('.model-lightbox-3d__canvas') || target.closest('.model-lightbox-3d__info')) return;
+    if (target.closest('.model-lightbox-3d__body')) return;
     close3DLb();
+  });
+
+  lb3dDebugToggle.addEventListener('click', () => {
+    const nextState = lb3dDebug.dataset.open !== 'true';
+    setDebugPanelOpen(nextState);
+  });
+
+  lb3dCopyCompact.addEventListener('click', () => {
+    void copyCameraConfig('compact');
+  });
+
+  lb3dCopyExact.addEventListener('click', () => {
+    void copyCameraConfig('exact');
   });
 
   document.getElementById('lb3d-close')!.addEventListener('click', close3DLb);

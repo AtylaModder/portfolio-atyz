@@ -159,17 +159,129 @@ export const teams = [
 
 export const models = [
   { id: 1, title: 'Wardrobe', category: 'blocks', image: '/models/wardrobe.png' },
-  { id: 3, title: 'Gamabunta', category: 'mobs', image: '/models/gamabunta.png', model3d: '/models/gamabunta.geo.gltf',
-    camera: { angle: 145, height: 80, zoom: 1.2, lookX: 0, lookY: -0.25, ortho: true },
+  {
+    id: 3, title: 'Gamabunta', category: 'mobs', image: '/models/gamabunta.png', model3d: '/models/gamabunta.geo.gltf',
+    camera: {
+      angle: 139.0,
+      height: 81.0,
+      zoom: 1.029,
+      lookX: 0.010,
+      lookY: 0.014,
+      lookZ: 0.089,
+      positionX: 10.350,
+      positionY: 2.554,
+      positionZ: -11.436,
+      targetX: 0.053,
+      targetY: 0.066,
+      targetZ: 0.392,
+      ortho: true,
+    },
+
+
   },
-  { id: 3, title: 'Hydra Boss', category: 'mobs', image: '/models/hydra.png', model3d: '/models/hydra.geo.gltf',
-    camera: { angle: 145, height: 80, zoom: 1.2, lookX: 0, lookY: -0.25, ortho: true },
+  {
+    id: 3, title: 'Shukaku', category: 'mobs', image: '/models/shukaku.png', model3d: '/models/shukaku.geo.gltf',
+    camera: {
+  angle: 131.4,
+  height: 77.6,
+  zoom: 0.719,
+  lookX: -0.359,
+  lookY: -0.018,
+  lookZ: -0.120,
+  positionX: 10.341,
+  positionY: 3.349,
+  positionZ: -11.131,
+  targetX: -1.289,
+  targetY: -0.063,
+  targetZ: -0.874,
+  ortho: true,
+},
+
+
   },
-  { id: 3, title: 'Titan', category: 'mobs', image: '/models/titan.png', model3d: '/models/titan.geo.gltf',
-    camera: { angle: 145, height: 80, zoom: 1.2, lookX: 0, lookY: -0.25, ortho: true },
+  {
+    id: 3, title: 'Susanoo Armored', category: 'mobs', image: '/models/susanoo3.png', model3d: '/models/susanoo3.geo.gltf',
+    camera: {
+      angle: 157.6,
+      height: 80.3,
+      zoom: 0.750,
+      lookX: -0.053,
+      lookY: -0.040,
+      lookZ: 0.232,
+      positionX: 10.600,
+      positionY: 4.691,
+      positionZ: -25.413,
+      targetX: -0.478,
+      targetY: -0.256,
+      targetZ: 1.485,
+      ortho: true,
+    },
+    render: {
+      emissive: true,
+      emissiveIntensity: 1.0,
+      oneSided: true,
+      vibrant3d: {
+        enabled: true,
+        aoIntensity: 0.82,
+        envIntensity: 1.05,
+        studioIntensity: 1,
+        heightScale: 0.16,
+      },
+    },
   },
-  { id: 4, title: 'Charmander', category: 'mobs', image: '/models/charmander.png', model3d: '/models/charmander.geo.gltf',
-    camera: { angle: 145, height: 80, zoom: 1.2, lookX: 0, lookY: -0.25, ortho: true },
+  {
+    id: 3, title: 'Hydra Boss', category: 'mobs', image: '/models/hydra.png', model3d: '/models/hydra.geo.gltf',
+    camera: {
+      angle: 133.1,
+      height: 83.0,
+      zoom: 0.831,
+      lookX: -0.324,
+      lookY: -0.136,
+      lookZ: -0.074,
+      positionX: 19.747,
+      positionY: 2.318,
+      positionZ: -20.618,
+      targetX: -1.644,
+      targetY: -1.283,
+      targetZ: -0.614,
+      ortho: true,
+    },
+  },
+  {
+    id: 3, title: 'Titan', category: 'mobs', image: '/models/titan.png', model3d: '/models/titan.geo.gltf',
+    camera: {
+      angle: 142.5,
+      height: 86.0,
+      zoom: 0.969,
+      lookX: -0.109,
+      lookY: 0.004,
+      lookZ: 0.637,
+      positionX: 17.379,
+      positionY: 2.069,
+      positionZ: -22.682,
+      targetX: -0.533,
+      targetY: 0.016,
+      targetZ: 0.677,
+      ortho: true,
+    },
+  },
+  {
+    id: 4, title: 'Charmander', category: 'mobs', image: '/models/charmander.png', model3d: '/models/charmander.geo.gltf',
+    camera: {
+      angle: 135.6,
+      height: 79.6,
+      zoom: 0.929,
+      lookX: -0.163,
+      lookY: -0.014,
+      lookZ: -0.049,
+      positionX: 4.302,
+      positionY: 1.171,
+      positionZ: -4.760,
+      targetX: -0.260,
+      targetY: -0.022,
+      targetZ: -0.108,
+      ortho: true,
+    },
   },
   { id: 5, title: 'Custom Skin', category: 'characters', image: '/models/skin.gif' },
   { id: 6, title: 'Base Character', category: 'characters', image: '/models/base_3_4.gif' },
@@ -178,7 +290,7 @@ export const models = [
 /*
  * ── Como ajustar a câmera de cada modelo 3D ──────────────
  *
- *   camera: { angle, height, zoom, lookX, lookY, ortho }
+ *   camera: { angle, height, zoom, lookX, lookY, lookZ, ortho, positionX, positionY, positionZ, targetX, targetY, targetZ }
  *
  *   angle  → Rotação horizontal em graus (0-360).
  *            0 = frente, 90 = lado direito, 180 = trás, 270 = lado esquerdo.
@@ -194,9 +306,66 @@ export const models = [
  *
  *   lookY  → Deslocamento vertical do alvo (em % da altura do modelo).
  *            0 = centro, 0.1 = olha mais pra cima, -0.2 = olha mais pra baixo.
+
+ *   lookZ  → Deslocamento de profundidade do alvo (em % da profundidade do modelo).
+ *            0 = centro, 0.1 = olha mais para frente, -0.1 = mais para trás.
  *
  *   ortho  → Modo ortográfico (true/false). Igual ao Blockbench.
  *            true = sem perspectiva, false = perspectiva normal.
+
+ *   positionX / positionY / positionZ → posição exata da câmera no espaço do viewer.
+ *   targetX / targetY / targetZ       → alvo exato da câmera.
+ *   Se esses 6 campos forem informados, eles têm prioridade sobre o cálculo automático por angle/height/look.
+ */
+
+/*
+ * ── Como ajustar o material/render do modelo 3D ─────────
+ *
+ *   render: { emissive, emissiveIntensity, oneSided, vibrant3d }
+ *
+ *   emissive          → aplica autoluz nas partes visíveis da textura.
+ *                       Bom para detalhes brilhantes e texturas com alpha.
+ *
+ *   emissiveIntensity → força do brilho emissivo.
+ *                       Padrão do viewer: 1.35.
+ *
+ *   oneSided          → força renderização só da face frontal.
+ *                       Útil quando o GLTF veio com double-sided e você quer o comportamento one-sided do Minecraft.
+ *
+ *   vibrant3d.enabled → ativa o pipeline opcional de MER/height + studio lighting + SSAO para esse modelo.
+ *                       Se o usuário desligar no botão do lightbox, o modelo continua abrindo, só sem esses extras.
+ *
+ *   vibrant3d.merTexture    → textura MER no padrão Bedrock.
+ *                             R = reflexividade/metalness, G = brilho emissivo, B = roughness.
+ *
+ *   vibrant3d.heightTexture → heightmap em grayscale.
+ *                             Pixels mais claros sobem o relevo visual da textura.
+ *
+ *   vibrant3d.heightScale   → força do relevo do heightmap.
+ *   vibrant3d.metalnessIntensity → peso da reflexividade do canal vermelho.
+ *   vibrant3d.roughnessIntensity → peso do canal azul para quebrar aparência plástica/lisa.
+ *   vibrant3d.emissiveIntensity  → força do brilho do canal verde.
+ *   vibrant3d.envIntensity       → peso das reflexões de estúdio.
+ *   vibrant3d.aoIntensity        → peso da oclusão de ambiente/SSAO.
+ *   vibrant3d.studioIntensity    → força geral da iluminação tipo studio/sketchfab.
+ *
+ *   Se você não passar merTexture/heightTexture, o Vibrant 3D ainda pode ser usado só para iluminação e oclusão.
+ *
+ *   Exemplo:
+ *   render: {
+ *     emissive: true,
+ *     emissiveIntensity: 1.6,
+ *     oneSided: true,
+ *     vibrant3d: {
+ *       enabled: true,
+ *       merTexture: '/models/meu_model_mer.png',
+ *       heightTexture: '/models/meu_model_height.png',
+ *       heightScale: 0.18,
+ *       aoIntensity: 0.8,
+ *       envIntensity: 1.1,
+ *       studioIntensity: 1,
+ *     },
+ *   }
  */
 
 /*
