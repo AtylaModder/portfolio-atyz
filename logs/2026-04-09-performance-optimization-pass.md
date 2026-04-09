@@ -166,6 +166,12 @@ Em src/layouts/BaseLayout.astro:
 - Cursor custom, microinterações, partículas e monitoramento de FPS passaram a subir em etapas diferidas, em vez de competir todas no mesmo instante em que a página aparece.
 - O morph da logo do loader foi simplificado para uma saída mais leve.
 
+### Correção posterior do footer
+
+- A versão em baixa resolução da máscara do pixel dissolve deixou o topo do footer borrado.
+- A máscara foi ajustada para rasterização em tamanho real novamente, mantendo o FPS limitado e a pausa por visibilidade.
+- Resultado esperado: bordas pixeladas nítidas outra vez, sem voltar ao custo contínuo original.
+
 ### Hints remanescentes
 
 - Sites antigo/portfolioantigo1/js/script.js → variável e não usada.
