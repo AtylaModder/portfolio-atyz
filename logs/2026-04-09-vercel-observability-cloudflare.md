@@ -144,3 +144,189 @@ Deploy por git:
 
 Instalar observabilidade localmente:
 - npm install @vercel/analytics @vercel/speed-insights
+
+## Passo a passo exato no painel do Cloudflare
+
+### Ordem recomendada
+
+1. Confirmar DNS proxied para o domínio do site.
+2. Ajustar SSL/TLS.
+3. Ligar HTTP/3 e Brotli.
+4. Criar as Cache Rules na ordem abaixo.
+5. Testar headers de cache no navegador.
+
+### 1. DNS
+
+No Cloudflare:
+
+1. Abrir o domínio.
+2. Ir em DNS.
+3. Encontrar o registro que aponta para a Vercel.
+4. Garantir que o proxy esteja ligado:
+   - nuvem laranja ligada
+5. Não trocar o alvo DNS que a Vercel te passou.
+
+### 2. SSL/TLS
+
+No Cloudflare:
+
+1. Ir em SSL/TLS > Overview
+2. Em SSL/TLS encryption mode, selecionar:
+   - Full (strict)
+
+Depois:
+
+1. Ir em SSL/TLS > Edge Certificates
+2. Ligar:
+   - Always Use HTTPS
+   - Automatic HTTPS Rewrites
+
+### 3. Rede e compressão
+
+No Cloudflare:
+
+1. Ir em Network
+2. Ligar:
+   - HTTP/3
+
+Depois:
+
+1. Ir em Speed > Optimization
+2. Ligar:
+   - Brotli
+
+Não recomendo mexer agora em Rocket Loader.
+Deixar Rocket Loader desligado.
+
+### 4. Cache Rules
+
+Ir em Rules > Cache Rules
+
+Criar exatamente nesta ordem:
+
+#### Regra 1 — proteger HTML da home
+
+Nome sugerido:
+- Bypass home HTML
+
+Se o editor de regra estiver em modo Expression, colar:
+
+  (http.request.uri.path eq "/" or http.request.uri.path eq "/index.html")
+
+Ações:
+- Cache eligibility: Bypass cache
+
+Salvar.
+
+#### Regra 2 — cache agressivo do build hashado
+
+Nome sugerido:
+- Cache astro build assets
+
+Expressão:
+
+  starts_with(http.request.uri.path, "/_astro/")
+
+Ações:
+- Cache eligibility: Eligible for cache
+- Edge TTL: Ignore cache-control header and use this TTL
+- Edge TTL value: 1 month
+- Browser TTL: Respect existing headers
+
+Salvar.
+
+#### Regra 3 — cache de mídia de projetos e galeria
+
+Nome sugerido:
+- Cache media assets
+
+Expressão:
+
+  starts_with(http.request.uri.path, "/projects/") or starts_with(http.request.uri.path, "/visuals/") or starts_with(http.request.uri.path, "/models/")
+
+Ações:
+- Cache eligibility: Eligible for cache
+- Edge TTL: Ignore cache-control header and use this TTL
+- Edge TTL value: 7 days
+- Browser TTL: 1 day
+
+Salvar.
+
+#### Regra 4 — cache de fontes
+
+Nome sugerido:
+- Cache fonts
+
+Expressão:
+
+  starts_with(http.request.uri.path, "/fonts/")
+
+Ações:
+- Cache eligibility: Eligible for cache
+- Edge TTL: Ignore cache-control header and use this TTL
+- Edge TTL value: 1 month
+- Browser TTL: 7 days
+
+Salvar.
+
+### 5. Tiered Cache
+
+No Cloudflare:
+
+1. Ir em Caching
+2. Procurar por Tiered Cache
+3. Ligar
+
+Se aparecer Smart Tiered Cache, pode ligar também.
+
+### 6. O que não ligar agora
+
+Deixar desligado por enquanto:
+
+- Rocket Loader
+- Mirage
+- Auto Minify de JavaScript, se você já está confiando no build do Vite
+
+Pode testar depois, mas não é minha primeira escolha para este projeto.
+
+### 7. Como validar se funcionou
+
+No navegador:
+
+1. Abrir o site publicado.
+2. Abrir DevTools > Network.
+3. Recarregar a página.
+4. Clicar em um arquivo de:
+   - /_astro/
+   - /projects/
+   - /visuals/
+5. Verificar os response headers.
+
+Você quer ver algo assim:
+
+- cf-cache-status: HIT
+
+Na primeira visita pode aparecer MISS.
+Depois de alguns reloads, o esperado é começar a aparecer HIT nos assets estáticos.
+
+### 8. Regra de ouro para este site
+
+- HTML da home: sem cache forçado no Cloudflare.
+- /_astro/: cache longo.
+- Imagens, modelos e fontes: cache médio ou longo.
+- Se trocar um arquivo mantendo o mesmo nome em public, faça purge desse arquivo no Cloudflare.
+
+### 9. Purge quando trocar asset sem mudar nome
+
+No Cloudflare:
+
+1. Ir em Caching > Configuration
+2. Abrir Purge Cache
+3. Escolher Custom Purge
+4. Informar a URL exata do arquivo alterado
+
+Exemplo:
+- https://atyzmodder.com/projects/hydra.webp
+
+Se trocar muitos arquivos de uma vez e não quiser pensar muito, usar Purge Everything.
+Mas isso só quando necessário.
