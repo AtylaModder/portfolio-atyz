@@ -124,7 +124,7 @@ export const projects = [
     tags: ['Map', 'VibrantVisuals', 'Design'],
     accent: 'cyan' as AccentTone,
     image: '/projects/rio.webp',
-    link: 'https://youtu.be/qsZQsCNx8y8?si=_rBCRi9LuQQlPgpU',
+    link: 'https://www.minecraft.net/pt-br/marketplace/pdp/a30x1/rio-de-janeiro-1.0/5750a191-8aac-4a5d-b13f-adf6190d1d04',
   },
 ];
 
