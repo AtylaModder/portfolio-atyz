@@ -1,6 +1,6 @@
 # 🗺️ MAPA COMPLETO DO SITE — ATYZ MODDER
 
-> **Última atualização**: 8 de abril de 2026
+> **Última atualização**: 10 de abril de 2026
 > **URL**: https://atyzmodder.com
 > **Repositório**: Portfolio pessoal de Atyla Smith (Atyz)
 > **Descrição**: Portfólio de designer e desenvolvedor focado em Minecraft Bedrock — add-ons, texturas, modelagem 3D e direção visual.
@@ -302,8 +302,11 @@ A página é single-page com scroll. Ordem de renderização:
 - **Lightbox 3D** (Three.js):
   - OrbitControls interativo
   - Camera presets por modelo (angle, height, zoom, ortho)
-  - Studio lighting (5 luzes: ambient, hemisphere, key, fill, rim)
-  - SSAO post-processing
+  - Iluminação premium com IBL de estúdio, rig mais quente/menos frontal e sombra de contato
+  - SSAO + bloom só quando existe emissive válido, preservando melhor a cor base dos pixels
+  - Emissive guiado pela transparência visível da textura, mantendo a cor base dos pixels brilhantes
+  - Height map sidecar opcional aplicado como relevo por bump invertido, com reforço de cavidade derivado do próprio mapa
+  - Toggle simples entre luz premium e modo leve, com preferência salva
   - Nearest-neighbor filtering (preserva pixel art)
   - Hints visuais (drag, pan, zoom icons)
 
@@ -349,6 +352,8 @@ Detecta as capacidades do dispositivo e ajusta o site:
 | `noBackdrop`       | Sem suporte backdrop-filter       | Fallback sem glassmorphism          |
 | `isMobile`         | Touch OR width < 768px            | Partículas reduzidas (15 vs 35)     |
 | FPS monitor        | avg FPS < 28 por 2s               | Adiciona `.perf-no-backdrop`        |
+
+- O viewer 3D agora inicia em modo leve por padrão em mobile/low-end e mantém toggle manual para luz premium.
 
 ### Sistema de Animações (animations.ts)
 GSAP + ScrollTrigger com 4 classes de reveal:
@@ -399,11 +404,14 @@ GSAP + ScrollTrigger com 4 classes de reveal:
 - Three.js com OrbitControls
 - Suporta modelos GLTF
 - Camera orthográfica ou perspectiva (configurável por modelo)
-- Studio lighting: 5 luzes (ambient, hemisphere, key, fill, rim + bottom)
-- SSAO post-processing
+- Iluminação premium com RoomEnvironment, rig dinâmico mais quente/menos frontal e sombra de contato
+- NoToneMapping nos dois modos para preservar a cor base do pixel art
+- Bloom só entra quando há emissive válido, com threshold alto para não confundir cor clara com luz emissiva
+- Emissive agora é derivado do alpha visível da textura, preservando a cor original dos pixels emissivos
+- Sidecar opcional de height map por brilho usando nome_do_modelo_height_map.png ou caminho explícito em render.heightMap, aplicado como relevo por bump invertido com cavidade derivada do próprio mapa
+- Toggle runtime entre luz premium e modo leve, com fallback por tier de performance
 - Auto-center e auto-scale baseado no bounding box
 - Nearest-neighbor texture filtering (pixel art)
-- Tone mapping: NoToneMapping (preserva cores Minecraft exatas)
 
 ### Microinterações (microinteractions.ts)
 1. **Magnetic Buttons**: atraem dentro de 80px, força 30%
@@ -539,7 +547,7 @@ services       // 6 serviços (icon, title, description)
 projects       // 3 projetos (title, role, description, tags, accent, image, link)
 modelCategories // ["All", "Characters", "Blocks", "Mobs"]
 teams          // 3 equipes (name, role, note, image, accent, link)
-models         // 7 modelos (id, title, category, image, model3d?, camera?)
+models         // 7 modelos (id, title, category, image, model3d?, camera?, render?)
 ```
 
 ---

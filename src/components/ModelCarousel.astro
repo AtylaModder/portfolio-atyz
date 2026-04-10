@@ -55,6 +55,13 @@ import { modelCategories } from '../data/site';
     <button class="model-lightbox-3d__debug-toggle" id="lb3d-debug-toggle" type="button" aria-controls="lb3d-debug" aria-expanded="true">
       Camera
     </button>
+    <div class="model-lightbox-3d__viewer-controls">
+      <button class="model-lightbox-3d__lighting-toggle" id="lb3d-lighting-toggle" type="button" aria-pressed="true">
+        <span class="model-lightbox-3d__lighting-label">Luz premium</span>
+        <span class="model-lightbox-3d__lighting-value" id="lb3d-lighting-value">Ligada</span>
+      </button>
+      <p class="model-lightbox-3d__lighting-note" id="lb3d-lighting-note">AO, bloom e luz dinâmica</p>
+    </div>
     <aside class="model-lightbox-3d__debug" id="lb3d-debug" data-open="true" data-lenis-prevent>
       <div class="model-lightbox-3d__debug-header">
         <div>
@@ -120,8 +127,12 @@ import { modelCategories } from '../data/site';
   type ViewerRenderConfig = {
     emissive?: boolean;
     emissiveIntensity?: number;
+    heightMap?: boolean | string;
+    heightMapStrength?: number;
     oneSided?: boolean;
   };
+
+  type ViewerLightingMode = 'enhanced' | 'basic';
 
   type ViewerCameraDebugInfo = {
     mode: 'orthographic' | 'perspective';
@@ -140,6 +151,8 @@ import { modelCategories } from '../data/site';
     dispose: () => void;
     resize: () => void;
     getCameraDebugInfo: () => ViewerCameraDebugInfo;
+    setLightingMode: (mode: ViewerLightingMode) => void;
+    getLightingMode: () => ViewerLightingMode;
   };
 
   /* ── DOM refs ──────────────────────────────────── */
@@ -156,6 +169,9 @@ import { modelCategories } from '../data/site';
   const lb3dTitle  = document.getElementById('lb3d-title')!;
   const lb3dDebug = document.getElementById('lb3d-debug') as HTMLElement;
   const lb3dDebugToggle = document.getElementById('lb3d-debug-toggle') as HTMLButtonElement;
+  const lb3dLightingToggle = document.getElementById('lb3d-lighting-toggle') as HTMLButtonElement;
+  const lb3dLightingValue = document.getElementById('lb3d-lighting-value') as HTMLElement;
+  const lb3dLightingNote = document.getElementById('lb3d-lighting-note') as HTMLElement;
   const lb3dDebugStatus = document.getElementById('lb3d-debug-status') as HTMLElement;
   const lb3dDebugCompact = document.getElementById('lb3d-debug-compact') as HTMLElement;
   const lb3dDebugExact = document.getElementById('lb3d-debug-exact') as HTMLElement;
@@ -198,8 +214,51 @@ import { modelCategories } from '../data/site';
   let debugTicker = 0;
   let lastCameraDebugInfo: ViewerCameraDebugInfo | null = null;
   let modelViewerModulePromise: Promise<typeof import('../lib/bedrock-renderer')> | null = null;
+  const lightingStorageKey = 'atyz-model-viewer-lighting-mode';
+  let activeLightingMode: ViewerLightingMode = getStoredLightingMode();
 
   const defaultDebugOpen = () => window.innerWidth >= 1024;
+
+  function getStoredLightingMode(): ViewerLightingMode {
+    try {
+      const stored = window.localStorage.getItem(lightingStorageKey);
+      if (stored === 'enhanced' || stored === 'basic') {
+        return stored;
+      }
+    } catch {
+      // Ignore storage failures and fall back to perf heuristics.
+    }
+
+    const perfTier = (window as any).__perfTier;
+    return perfTier?.isLowEnd || perfTier?.isMobile ? 'basic' : 'enhanced';
+  }
+
+  function persistLightingMode(mode: ViewerLightingMode) {
+    activeLightingMode = mode;
+    try {
+      window.localStorage.setItem(lightingStorageKey, mode);
+    } catch {
+      // Ignore storage failures so the viewer still works.
+    }
+  }
+
+  function updateLightingToggle(mode: ViewerLightingMode) {
+    activeLightingMode = mode;
+    const perfTier = (window as any).__perfTier;
+    const isEnhanced = mode === 'enhanced';
+    lb3dLightingToggle.setAttribute('aria-pressed', String(isEnhanced));
+    lb3dLightingValue.textContent = isEnhanced ? 'Ligada' : 'Leve';
+    lb3dLightingNote.textContent = isEnhanced
+      ? 'AO, bloom e luz dinâmica'
+      : perfTier?.isLowEnd || perfTier?.isMobile
+        ? 'Modo leve para aliviar o aparelho'
+        : 'Sem pós, com render mais leve';
+  }
+
+  function setLightingToggleDisabled(isDisabled: boolean) {
+    lb3dLightingToggle.disabled = isDisabled;
+    lb3dLightingToggle.dataset.loading = isDisabled ? 'true' : 'false';
+  }
 
   function setDebugPanelOpen(isOpen: boolean) {
     lb3dDebug.dataset.open = isOpen ? 'true' : 'false';
@@ -540,6 +599,8 @@ import { modelCategories } from '../data/site';
     document.body.style.overflow = 'hidden';
     lb3dDebugStatus.textContent = 'Ao vivo';
     setDebugPanelOpen(defaultDebugOpen());
+    updateLightingToggle(activeLightingMode);
+    setLightingToggleDisabled(true);
 
     /* Stop Lenis so wheel events go to OrbitControls zoom */
     (window as any).__lenis?.stop();
@@ -554,17 +615,28 @@ import { modelCategories } from '../data/site';
     const camera = parseCameraConfig(camRaw);
     const render = parseRenderConfig(renderRaw);
 
-    const { createModelViewer } = await loadModelViewerModule();
+    try {
+      const { createModelViewer } = await loadModelViewerModule();
 
-    activeViewer = await createModelViewer({
-      canvas: lb3dCanvas,
-      modelUrl,
-      interactive: true,
-      camera,
-      render,
-    });
-    activeViewer.resize();
-    startCameraDebug();
+      activeViewer = await createModelViewer({
+        canvas: lb3dCanvas,
+        modelUrl,
+        interactive: true,
+        camera,
+        render,
+        lightingMode: activeLightingMode,
+      });
+      activeViewer.resize();
+      const appliedLightingMode = activeViewer.getLightingMode();
+      updateLightingToggle(appliedLightingMode);
+      persistLightingMode(appliedLightingMode);
+      startCameraDebug();
+    } catch (error) {
+      console.error('Erro ao abrir viewer 3D', error);
+      lb3dDebugStatus.textContent = 'Falha no viewer';
+    } finally {
+      setLightingToggleDisabled(false);
+    }
   }
 
   function closeLb() {
@@ -579,6 +651,7 @@ import { modelCategories } from '../data/site';
     lb3d.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
     stopCameraDebug();
+    setLightingToggleDisabled(false);
     /* Resume Lenis */
     (window as any).__lenis?.start();
     if (activeViewer) {
@@ -601,6 +674,22 @@ import { modelCategories } from '../data/site';
   lb3dDebugToggle.addEventListener('click', () => {
     const nextState = lb3dDebug.dataset.open !== 'true';
     setDebugPanelOpen(nextState);
+  });
+
+  lb3dLightingToggle.addEventListener('click', () => {
+    const nextMode: ViewerLightingMode = activeLightingMode === 'enhanced' ? 'basic' : 'enhanced';
+
+    if (activeViewer) {
+      activeViewer.setLightingMode(nextMode);
+      const appliedMode = activeViewer.getLightingMode();
+      updateLightingToggle(appliedMode);
+      persistLightingMode(appliedMode);
+      lb3dDebugStatus.textContent = appliedMode === 'enhanced' ? 'Luz premium ligada' : 'Modo leve ligado';
+      return;
+    }
+
+    updateLightingToggle(nextMode);
+    persistLightingMode(nextMode);
   });
 
   lb3dCopyCompact.addEventListener('click', () => {
@@ -628,6 +717,7 @@ import { modelCategories } from '../data/site';
   document.addEventListener('visibilitychange', queueTicker);
 
   /* ── Init ──────────────────────────────────────── */
+  updateLightingToggle(activeLightingMode);
   build();
   queueTicker();
 

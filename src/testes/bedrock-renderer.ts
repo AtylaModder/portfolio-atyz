@@ -399,23 +399,14 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   const lightTarget = new THREE.Object3D();
   scene.add(lightTarget);
 
-  // Pure white ambient kept extremely low — in enhanced mode the IBL environment
-  // and key light provide all the fill needed. High ambient was a primary cause of
-  // the washed-out look.
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
+  const ambientLight = new THREE.AmbientLight(0xfff7e4, 1.15);
   scene.add(ambientLight);
 
-  // Pale sky-blue above / very dark warm-brown below.
-  // This gives the subtle sky-vs-ground colour separation you see in Blender and
-  // Sketchfab — the shadow sides pick up a cool tint rather than staying neutral.
-  const hemiLight = new THREE.HemisphereLight(0xc8dcf0, 0x0d0b08, 0.6);
+  const hemiLight = new THREE.HemisphereLight(0xffefdc, 0x17110c, 0.6);
   hemiLight.position.set(0, 10, 0);
   scene.add(hemiLight);
 
-  // Key light: near-white with the faintest warmth — mimics a studio softbox or a
-  // slightly overcast sun. The original warm orange (0xffd2a0) was tinting every
-  // model amber and fighting with the blue shadow lights.
-  const keyLight = new THREE.DirectionalLight(0xfff8f0, 2.1);
+  const keyLight = new THREE.DirectionalLight(0xffd2a0, 2.1);
   keyLight.castShadow = enableShadows;
   keyLight.shadow.mapSize.width = 1024;
   keyLight.shadow.mapSize.height = 1024;
@@ -424,29 +415,19 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
   keyLight.target = lightTarget;
   scene.add(keyLight);
 
-  // Fill light: cool blue-grey on the opposite side of the key.
-  // Opposing warm key with a cool fill is the classic three-point technique used
-  // in Blender's studio preset — it creates colour contrast and depth rather than
-  // a flat, evenly-warm look.
-  const fillLight = new THREE.DirectionalLight(0xb8cce8, 0.9);
+  const fillLight = new THREE.DirectionalLight(0xf4dcc1, 0.9);
   fillLight.target = lightTarget;
   scene.add(fillLight);
 
-  // Rim / back light: cold blue-white from behind the subject.
-  // This is the silhouette-separation light you see in Nomad Sculpt and Sketchfab.
-  // It prevents the model from merging with a dark background and gives edges a
-  // crisp, "lit from a sky" quality.
-  const rimLight = new THREE.DirectionalLight(0xddeeff, 0.8);
+  const rimLight = new THREE.DirectionalLight(0xffcf93, 0.8);
   rimLight.target = lightTarget;
   scene.add(rimLight);
 
-  // Kick light: very subtle cool top-rear light — acts like ambient skylight catch.
-  const kickLight = new THREE.DirectionalLight(0xa0c4f0, 0.35);
+  const kickLight = new THREE.DirectionalLight(0x7bbef6, 0.35);
   kickLight.target = lightTarget;
   scene.add(kickLight);
 
-  // Bottom bounce: almost completely off in enhanced mode; just a ghost of uplight.
-  const bottomLight = new THREE.DirectionalLight(0xfff8f0, 0.22);
+  const bottomLight = new THREE.DirectionalLight(0xfff1db, 0.22);
   bottomLight.target = lightTarget;
   scene.add(bottomLight);
 
@@ -697,14 +678,9 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     composer.addPass(renderPass);
 
     ssaoPass = new SSAOPass(scene, camera, width, height);
-    // Smaller kernel radius = tighter, crisper AO rather than a gray fog.
-    // The original radius of 15 was spreading the AO haze too far, contributing
-    // to the flat/washed look.
-    ssaoPass.kernelRadius = perfTier?.isMobile ? 8 : 12;
-    // Tighter depth range so only genuine crevices and contact points catch AO,
-    // not broad flat surfaces.
-    ssaoPass.minDistance = 0.0008;
-    ssaoPass.maxDistance = perfTier?.isMobile ? 0.055 : 0.075;
+    ssaoPass.kernelRadius = perfTier?.isMobile ? 10 : 15;
+    ssaoPass.minDistance = 0.0012;
+    ssaoPass.maxDistance = perfTier?.isMobile ? 0.07 : 0.1;
     composer.addPass(ssaoPass);
 
     if (enableEmissive) {
@@ -745,14 +721,8 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
       } = entry;
 
       if (material.envMapIntensity !== undefined) {
-        // Cap the IBL (image-based lighting) contribution much lower than before.
-        // The RoomEnvironment was flooding the model with diffuse ambient light on
-        // top of all the explicit lights, drowning out shadows and colour contrast.
-        // At 0.05–0.14 it provides just enough environment reflection colour without
-        // overwhelming the directional rig — closer to how Sketchfab's "studio" IBL
-        // behaves at medium intensity.
         material.envMapIntensity = enhanced
-          ? THREE.MathUtils.clamp(originalEnvMapIntensity, 0.05, 0.14)
+          ? THREE.MathUtils.clamp(originalEnvMapIntensity, 0.16, 0.28)
           : Math.min(originalEnvMapIntensity, 0.2);
       }
 
@@ -760,11 +730,8 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
         material.aoMap = heightDrivenAoMap ?? originalAoMap;
 
         if (material.aoMapIntensity !== undefined) {
-          // Higher AO intensity in enhanced mode so crevices and contact points
-          // read as genuinely dark — this is what gives Blender renders their depth.
-          // The original 0.46 was too subtle to counter-balance the bright lights.
           material.aoMapIntensity = heightDrivenAoMap
-            ? (enhanced ? 0.78 : 0.28)
+            ? (enhanced ? 0.46 : 0.22)
             : (originalAoIntensity ?? 1);
         }
       }
@@ -881,54 +848,20 @@ export async function createModelViewer(opts: ModelViewerOptions): Promise<Model
     lightingMode = mode;
     const enhanced = mode === 'enhanced';
 
-    // ── Tone mapping ──────────────────────────────────────────────────────────
-    // This is the single most impactful change in this entire lighting rework.
-    //
-    // The previous renderer.toneMapping = THREE.NoToneMapping meant that any
-    // light value above 1.0 was simply clamped to pure white — exactly like a
-    // camera with its exposure blown out. The result: blown highlights, washed
-    // textures, and flat-looking surfaces even on a well-structured light rig.
-    //
-    // ACESFilmicToneMapping (Academy Color Encoding System) is the industry
-    // standard used by Blender (Filmic), Sketchfab, and Unreal Engine. Instead of
-    // clipping, it applies an S-curve that:
-    //   • Compresses highlights gracefully (no blown whites)
-    //   • Boosts mid-tone contrast (textures look richer and more saturated)
-    //   • Deepens the shadows slightly (crevices read as genuinely dark)
-    //   • Preserves colour hue across brightness ranges
-    //
-    // The exposure of 0.88 is slightly below 1 — this compensates for the overall
-    // scene brightness so that the output looks correctly exposed after the
-    // ACES curve is applied. Think of it like pulling down the exposure dial on a
-    // camera before shooting RAW, then recovering detail in post.
-    renderer.toneMapping = enhanced ? THREE.ACESFilmicToneMapping : THREE.LinearToneMapping;
-    renderer.toneMappingExposure = enhanced ? 0.88 : 1.0;
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = enableShadows && enhanced;
     renderer.shadowMap.needsUpdate = true;
 
     scene.environment = enhanced ? studioEnvironmentTexture : null;
-
-    // ── Light intensities ─────────────────────────────────────────────────────
-    // With NoToneMapping the scene needed low intensities to avoid clipping.
-    // With ACES we have headroom — values can legitimately exceed 1.0 and the
-    // tone mapper will handle them. So the numbers below might look similar but
-    // they now operate in a proper HDR pipeline.
-    //
-    // The key insight for a Blender/Sketchfab-style studio look is:
-    //   - Ambient must be very dim (the IBL + hemi handle ambient fill)
-    //   - One dominant key light provides directionality and contrast
-    //   - Fill and rim are deliberately low — they are *accents*, not floods
-    //   - The ACES curve itself adds apparent contrast, so we don't need to
-    //     force contrast through pumping up fill/ambient
-    ambientLight.intensity        = enhanced ? 0.04  : 1.04;
-    hemiLight.intensity           = enhanced ? 0.14  : 0.48;
-    keyLight.intensity            = enhanced ? 1.12  : 1.42;
-    fillLight.intensity           = enhanced ? 0.07  : 0.56;
-    rimLight.intensity            = enhanced ? 0.78  : 0.32;
-    kickLight.intensity           = enhanced ? 0.12  : 0.14;
-    bottomLight.intensity         = enhanced ? 0.02  : 0.08;
-    // Slightly darker contact shadow in enhanced mode to ground the model firmly.
-    contactShadowMaterial.opacity = enhanced ? 0.44  : 0.16;
+    ambientLight.intensity = enhanced ? 0.08 : 1.04;
+    hemiLight.intensity = enhanced ? 0.18 : 0.48;
+    keyLight.intensity = enhanced ? 1.52 : 1.42;
+    fillLight.intensity = enhanced ? 0.16 : 0.56;
+    rimLight.intensity = enhanced ? 0.98 : 0.32;
+    kickLight.intensity = enhanced ? 0.18 : 0.14;
+    bottomLight.intensity = enhanced ? 0.03 : 0.08;
+    contactShadowMaterial.opacity = enhanced ? 0.36 : 0.16;
 
     syncPostProcessing();
     applyMaterialLook(mode);

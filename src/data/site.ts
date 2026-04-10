@@ -158,7 +158,111 @@ export const teams = [
 ] as const;
 
 export const models = [
-  { id: 1, title: 'Wardrobe', category: 'blocks', image: '/models/wardrobe.png' },
+  {
+    id: 3, title: 'Light Fruit', category: 'mobs', image: '/models/lightfruit.png', model3d: '/models/lightfruit.gltf',
+    camera: {
+      angle: 129.1,
+      height: 77.2,
+      zoom: 0.882,
+      lookX: 0.782,
+      lookY: 0.163,
+      lookZ: 0.930,
+      positionX: 13.378,
+      positionY: 3.860,
+      positionZ: -8.147,
+      targetX: 1.369,
+      targetY: 0.345,
+      targetZ: 1.628,
+      ortho: true,
+    },
+    render: { emissive: false, emissiveIntensity: 1.0 }
+
+
+  },
+  {
+    id: 3, title: 'Animatronic', category: 'mobs', image: '/models/erno.png', model3d: '/models/erno.geo.gltf',
+    camera: {
+  angle: 150.7,
+  height: 76.8,
+  zoom: 1.083,
+  lookX: -0.120,
+  lookY: -0.072,
+  lookZ: -0.017,
+  positionX: 7.201,
+  positionY: 3.263,
+  positionZ: -13.540,
+  targetX: -0.374,
+  targetY: -0.354,
+  targetZ: -0.063,
+  ortho: true,
+},
+    render: { emissive: false, emissiveIntensity: 1.0 }
+
+
+  },
+  {
+    id: 3, title: 'Caos Boss', category: 'mobs', image: '/models/boss.png', model3d: '/models/boss.gltf',
+   camera: {
+  angle: 156.7,
+  height: 80.6,
+  zoom: 0.977,
+  lookX: -0.017,
+  lookY: 0.004,
+  lookZ: 0.013,
+  positionX: 6.135,
+  positionY: 2.613,
+  positionZ: -14.337,
+  targetX: -0.062,
+  targetY: 0.022,
+  targetZ: 0.050,
+  ortho: true,
+},
+    render: { emissive: true, emissiveIntensity: 1.0 }
+
+
+  },
+  {
+    id: 3, title: 'Fourarms', category: 'mobs', image: '/models/four.png', model3d: '/models/fourarms.gltf',
+   camera: {
+  angle: 152.9,
+  height: 87.8,
+  zoom: 1.083,
+  lookX: -0.391,
+  lookY: -0.001,
+  lookZ: 1.578,
+  positionX: 6.694,
+  positionY: 0.613,
+  positionZ: -13.131,
+  targetX: -0.528,
+  targetY: -0.002,
+  targetZ: 0.997,
+  ortho: true,
+},
+    render: { emissive: false, emissiveIntensity: 1.0 }
+
+
+  },
+  {
+    id: 3, title: 'Tupi', category: 'mobs', image: '/models/tupi.png', model3d: '/models/tupi.gltf',
+    camera: {
+  angle: 146.9,
+  height: 72.3,
+  zoom: 1.029,
+  lookX: 0.002,
+  lookY: -0.036,
+  lookZ: 0.212,
+  positionX: 8.256,
+  positionY: 4.735,
+  positionZ: -12.244,
+  targetX: 0.002,
+  targetY: -0.095,
+  targetZ: 0.431,
+  ortho: true,
+},
+    render: { emissive: false, emissiveIntensity: 1.0 }
+
+
+  },
   {
     id: 3, title: 'Gamabunta', category: 'mobs', image: '/models/gamabunta.png', model3d: '/models/gamabunta.geo.gltf',
     camera: {
@@ -182,20 +286,20 @@ export const models = [
   {
     id: 3, title: 'Shukaku', category: 'mobs', image: '/models/shukaku.png', model3d: '/models/shukaku.geo.gltf',
     camera: {
-  angle: 131.4,
-  height: 77.6,
-  zoom: 0.719,
-  lookX: -0.359,
-  lookY: -0.018,
-  lookZ: -0.120,
-  positionX: 10.341,
-  positionY: 3.349,
-  positionZ: -11.131,
-  targetX: -1.289,
-  targetY: -0.063,
-  targetZ: -0.874,
-  ortho: true,
-},
+      angle: 131.4,
+      height: 77.6,
+      zoom: 0.719,
+      lookX: -0.359,
+      lookY: -0.018,
+      lookZ: -0.120,
+      positionX: 10.341,
+      positionY: 3.349,
+      positionZ: -11.131,
+      targetX: -1.289,
+      targetY: -0.063,
+      targetZ: -0.874,
+      ortho: true,
+    },
 
 
   },
@@ -235,6 +339,7 @@ export const models = [
       targetZ: -0.614,
       ortho: true,
     },
+    render: { heightMap: '/models/hydra_height_map.png', heightMapStrength: 2.2 }
   },
   {
     id: 3, title: 'Titan', category: 'mobs', image: '/models/titan.png', model3d: '/models/titan.geo.gltf',
@@ -271,9 +376,7 @@ export const models = [
       targetZ: -0.108,
       ortho: true,
     },
-  },
-  { id: 5, title: 'Custom Skin', category: 'characters', image: '/models/skin.gif' },
-  { id: 6, title: 'Base Character', category: 'characters', image: '/models/base_3_4.gif' },
+  }
 ] as const;
 
 /*
@@ -310,19 +413,26 @@ export const models = [
 /*
  * ── Como ajustar o material/render do modelo 3D ─────────
  *
- *   render: { emissive, emissiveIntensity, oneSided }
+ *   render: { emissive, emissiveIntensity, heightMap, heightMapStrength, oneSided }
  *
  *   emissive          → aplica autoluz nas partes visíveis da textura.
  *                       Bom para detalhes brilhantes e texturas com alpha.
  *
  *   emissiveIntensity → força do brilho emissivo.
  *                       Padrão do viewer: 1.35.
+
+ *   heightMap         → relevo por brilho usando sidecar externo.
+ *                       true procura automaticamente nome_do_modelo_height_map.png na mesma pasta do GLTF.
+ *                       Também pode ser string com caminho exato, ex: '/models/hydra_height_map.png'.
+
+ *   heightMapStrength → força do relevo. O viewer interpreta preto como relevo para fora e branco como concavo.
+ *                       Padrão do viewer: 0.16.
  *
  *   oneSided          → força renderização só da face frontal.
  *                       Útil quando o GLTF veio com double-sided e você quer o comportamento one-sided do Minecraft.
  *
  *   Exemplo:
- *   render: { emissive: true, emissiveIntensity: 1.6, oneSided: true }
+ *   render: { emissive: true, emissiveIntensity: 1.6, heightMap: true, heightMapStrength: 0.18, oneSided: true }
  */
 
 /*
