@@ -14,3 +14,6 @@ pnpm-debug.log*
 !.dev.vars.example
 .env*
 !.env.example
+
+.vercel
+.env*.local
