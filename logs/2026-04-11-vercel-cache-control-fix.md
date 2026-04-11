@@ -14,12 +14,18 @@
 ## Correcao aplicada
 
 - Criado `vercel.json` na raiz do projeto.
+- A pagina inicial em `src/pages/index.astro` agora define os headers anti-cache na propria resposta HTML.
 - A home (`/` e `/index.html`) agora envia headers para impedir reuso de HTML antigo:
   - `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0`
   - `Pragma: no-cache`
   - `Expires: 0`
 - Assets versionados de `/_astro/` mantem cache longo e imutavel.
 - Midias estaticas (`/fonts`, `/models`, `/projects`, `/teams`, `/visuals`) mantem cache publico com `stale-while-revalidate`.
+
+## Ajuste de implementacao
+
+- O `vercel.json` sozinho nao estava sobrescrevendo o cache do HTML principal neste projeto.
+- Por isso o controle final da home foi movido para a resposta gerada pelo Astro, que e o caminho mais confiavel para este caso.
 
 ## Resultado esperado
 
