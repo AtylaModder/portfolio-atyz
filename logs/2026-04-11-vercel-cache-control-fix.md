@@ -26,6 +26,7 @@
 
 - O `vercel.json` sozinho nao estava sobrescrevendo o cache do HTML principal neste projeto.
 - Por isso o controle final da home foi movido para a resposta gerada pelo Astro, que e o caminho mais confiavel para este caso.
+- Como a home estava saindo como rota prerenderizada, foi definido `prerender = false` em `src/pages/index.astro` para garantir resposta SSR com headers anti-cache aplicados de fato.
 
 ## Resultado esperado
 

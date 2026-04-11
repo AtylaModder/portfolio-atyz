@@ -13,6 +13,8 @@ import VibrantVisualsSection from '../components/VibrantVisualsSection.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteMeta } from '../data/site';
 
+export const prerender = false;
+
 Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
 Astro.response.headers.set('Pragma', 'no-cache');
 Astro.response.headers.set('Expires', '0');
